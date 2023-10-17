@@ -9,10 +9,16 @@ import "./interfaces/IWETH.sol";
 import "./interfaces/IUniswapV2Pair.sol";
 import "./interfaces/IUniswapV2Factory.sol";
 
+import "./interfaces/uni-v3/core/IUniswapV3Factory.sol";
+import "./interfaces/uni-v3/core/IUniswapV3Pool.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import './interfaces/uni-v3/periphery/INonfungiblePositionManager.sol';
+
 //import "./libraries/TransferHelper.sol";
 
-contract Liquisafe is Initializable, AccessControlUpgradeable {
+contract Liquisafe is Initializable, AccessControlUpgradeable, IERC721Receiver {
     bytes32 public constant CONTROLLER_ROLE = keccak256("CONTROLLER_ROLE");
+    uint8 public constant decimalsUsd = 8;
 
     IPriceOracle public priceOracle;
     IWETH public WETH;
@@ -46,17 +52,19 @@ contract Liquisafe is Initializable, AccessControlUpgradeable {
         address owner;
         address receiver;
         address pool;
+        address positionManager;
         address token0;
         address token1;
         uint256 positionId;
-        uint256 amountLiquidity;
-        uint128 minAmountToken0;
-        uint128 minAmountToken1;
+        uint128 amountLiquidity;
+        uint128 minAmountToken0Usd;
+        uint128 minAmountToken1Usd;
     }
 
     Order[] public allOrders;
 
     mapping(address => bool) public authorizedFactories;
+    mapping(address => address) public nonFungiblePositionManagers;
 
     event Add(
         address indexed sender,
@@ -67,8 +75,13 @@ contract Liquisafe is Initializable, AccessControlUpgradeable {
 
     error NotAContract();
     error UnauthorizedFactory();
-    error NoPoolFound();
+    error PoolNotFound();
     error IncorrectToken();
+    error OrderNotActive();
+    error NotImplemented();
+    error InsufficientLiquidity();
+    error IncorrectReceiver();
+    error IncorrectPositionId();
 
     function initialize(
         address _priceOracle,
@@ -97,6 +110,16 @@ contract Liquisafe is Initializable, AccessControlUpgradeable {
         authorizedFactories[factory] = authorized;
     }
 
+    function setNonfungiblePositionManager(
+        address factory,
+        address nonfungiblePositionManager
+    ) external onlyRole(CONTROLLER_ROLE) {
+        if (!_isContract(nonfungiblePositionManager)) {
+            revert NotAContract();
+        }
+        nonFungiblePositionManagers[factory] = nonfungiblePositionManager;
+    }
+
     function updatePriceOracle(
         address _priceOracle
     ) external onlyRole(CONTROLLER_ROLE) {
@@ -111,38 +134,49 @@ contract Liquisafe is Initializable, AccessControlUpgradeable {
         OrderRole orderRole,
         address receiver,
         address factory,
-        address tokenA,
-        address tokenB,
+        address token0,
+        address token1,
+        uint24 fee,
         uint256 positionId,
-        uint256 amountLiquidity,
-        uint128 minAmountTokenA,
-        uint128 minAmountTokenB
+        uint128 amountLiquidity,
+        uint128 minAmountToken0Usd,
+        uint128 minAmountToken1Usd
     ) external {
         if (!authorizedFactories[factory]) {
             revert UnauthorizedFactory();
         }
-        if (tokenA != tokenB || tokenA == address(0)) {
+        if (token0 < token1 || token0 == address(0)) {
             revert IncorrectToken();
         }
 
-        address pool;
-        if (orderType == OrderType.UniV2) {
-            pool = IUniswapV2Factory(factory).getPair(tokenA, tokenB);
-        } else if (orderType == OrderType.UniV3) {} else if (
-            orderType == OrderType.UniV4
-        ) {}
-
-        if (pool == address(0)) {
-            revert NoPoolFound();
+        if (receiver == address(0)) {
+            revert IncorrectReceiver();
         }
 
-        (address token0, address token1) = tokenA < tokenB
-            ? (tokenA, tokenB)
-            : (tokenB, tokenA);
+        if (orderRole != OrderRole.Withdraw) {
+            revert NotImplemented();
+        }
 
-        (uint128 minToken0, uint128 minToken1) = tokenA < tokenB
-            ? (minAmountTokenA, minAmountTokenB)
-            : (minAmountTokenB, minAmountTokenA);
+        address pool;
+        address positionManager;
+        if (orderType == OrderType.UniV2) {
+            if (amountLiquidity == 0) {
+                revert InsufficientLiquidity();
+            }
+            pool = IUniswapV2Factory(factory).getPair(token0, token1);
+        } else if (orderType == OrderType.UniV3) {
+            if (positionId == 0) {
+                revert IncorrectPositionId();
+            }
+            pool = IUniswapV3Factory(factory).getPool(token0, token1, fee);
+            positionManager = nonFungiblePositionManagers[factory];
+        } else if (orderType == OrderType.UniV4) {
+            revert NotImplemented();
+        }
+
+        if (pool == address(0)) {
+            revert PoolNotFound();
+        }
 
         Order memory newOrder = Order(
             OrderStatus.Active,
@@ -151,16 +185,108 @@ contract Liquisafe is Initializable, AccessControlUpgradeable {
             msg.sender,
             receiver,
             pool,
+            positionManager,
             token0,
             token1,
             positionId,
             amountLiquidity,
-            minToken0,
-            minToken1
+            minAmountToken0Usd,
+            minAmountToken1Usd
         );
         allOrders.push(newOrder);
 
         emit Add(msg.sender, receiver, allOrders.length - 1, newOrder);
+    }
+
+    function executeOrders(uint256[] calldata orderIndexes) external {
+        for (uint256 i = 0; i < orderIndexes.length; i++) {
+            Order memory order = allOrders[orderIndexes[i]];
+            if (_canExecuteOrder(order)) {
+                if (order.orderType == OrderType.UniV2) {
+                    IERC20(order.pool).transferFrom(
+                        order.owner,
+                        order.pool,
+                        order.amountLiquidity
+                    );
+                    if (order.orderRole == OrderRole.Withdraw) {
+                        // withdraw token to receiver address
+                        IUniswapV2Pair(order.pool).burn(order.receiver);
+                    }
+                } else if (order.orderType == OrderType.UniV3) {
+                    INonfungiblePositionManager nonfungiblePositionManager = INonfungiblePositionManager(
+                            order.positionManager
+                        );
+                    // amount0Min and amount1Min are price slippage checks
+                    // if the amount received after burning is not greater than these minimums, transaction will fail
+                    INonfungiblePositionManager.DecreaseLiquidityParams
+                        memory params = INonfungiblePositionManager
+                            .DecreaseLiquidityParams({
+                                tokenId: order.positionId,
+                                liquidity: order.amountLiquidity,
+                                amount0Min: 0,
+                                amount1Min: 0,
+                                deadline: block.timestamp
+                            });
+
+                    (uint256 amount0, uint256 amount1) = nonfungiblePositionManager
+                        .decreaseLiquidity(params);
+
+                    //send liquidity back to owner
+                    IERC20(order.token0).transfer(order.owner, amount0);
+                    IERC20(order.token1).transfer(order.owner, amount1);
+                } else {
+                    revert NotImplemented();
+                }
+            }
+        }
+    }
+
+    function onERC721Received(
+        address operator,
+        address,
+        uint256 tokenId,
+        bytes calldata
+    ) external override returns (bytes4) {
+        // get position information
+        //_createDeposit(operator, tokenId);
+        return this.onERC721Received.selector;
+    }
+
+    function canExecuteOrder(uint256 index) external view returns (bool) {
+        Order memory order = allOrders[index];
+        return _canExecuteOrder(order);
+    }
+
+    function _canExecuteOrder(
+        Order memory order
+    ) private view returns (bool can) {
+        if (order.orderStatus != OrderStatus.Active) {
+            revert OrderNotActive();
+        }
+
+        if (order.minAmountToken0Usd > 0) {
+            (uint256 price, uint256 decimals) = priceOracle.getAssetPriceInUsd(
+                order.token0
+            );
+            if (
+                (price * 10 ** decimalsUsd) <=
+                (order.minAmountToken0Usd * 10 ** decimals)
+            ) {
+                return true;
+            }
+        }
+
+        if (order.minAmountToken1Usd > 0) {
+            (uint256 price, uint256 decimals) = priceOracle.getAssetPriceInUsd(
+                order.token1
+            );
+            if (
+                (price * 10 ** decimalsUsd) <=
+                (order.minAmountToken1Usd * 10 ** decimals)
+            ) {
+                return true;
+            }
+        }
     }
 
     function _isContract(address addr) private view returns (bool) {
