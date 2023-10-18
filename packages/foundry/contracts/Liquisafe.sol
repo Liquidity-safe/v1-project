@@ -12,7 +12,7 @@ import "./interfaces/IUniswapV2Factory.sol";
 import "./interfaces/uni-v3/core/IUniswapV3Factory.sol";
 import "./interfaces/uni-v3/core/IUniswapV3Pool.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
-import './interfaces/uni-v3/periphery/INonfungiblePositionManager.sol';
+import "./interfaces/uni-v3/periphery/INonfungiblePositionManager.sol";
 
 //import "./libraries/TransferHelper.sol";
 
@@ -120,6 +120,12 @@ contract Liquisafe is Initializable, AccessControlUpgradeable, IERC721Receiver {
         nonFungiblePositionManagers[factory] = nonfungiblePositionManager;
     }
 
+    function removeNonfungiblePositionManager(
+        address factory
+    ) external onlyRole(CONTROLLER_ROLE) {
+        nonFungiblePositionManagers[factory] = address(0);
+    }
+
     function updatePriceOracle(
         address _priceOracle
     ) external onlyRole(CONTROLLER_ROLE) {
@@ -145,7 +151,7 @@ contract Liquisafe is Initializable, AccessControlUpgradeable, IERC721Receiver {
         if (!authorizedFactories[factory]) {
             revert UnauthorizedFactory();
         }
-        if (token0 < token1 || token0 == address(0)) {
+        if (token0 > token1 || token0 == address(0)) {
             revert IncorrectToken();
         }
 
@@ -228,8 +234,10 @@ contract Liquisafe is Initializable, AccessControlUpgradeable, IERC721Receiver {
                                 deadline: block.timestamp
                             });
 
-                    (uint256 amount0, uint256 amount1) = nonfungiblePositionManager
-                        .decreaseLiquidity(params);
+                    (
+                        uint256 amount0,
+                        uint256 amount1
+                    ) = nonfungiblePositionManager.decreaseLiquidity(params);
 
                     //send liquidity back to owner
                     IERC20(order.token0).transfer(order.owner, amount0);
