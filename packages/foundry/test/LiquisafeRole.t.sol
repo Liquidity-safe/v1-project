@@ -48,8 +48,4 @@ contract LiquisafeRoleTest is Fixture {
             address(0)
         );
     }
-
-    function test_AddOrder() public {
-        
-    }
 }

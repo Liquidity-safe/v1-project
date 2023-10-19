@@ -14,7 +14,8 @@ import "./interfaces/uni-v3/core/IUniswapV3Pool.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "./interfaces/uni-v3/periphery/INonfungiblePositionManager.sol";
 
-//import "./libraries/TransferHelper.sol";
+//import {console} from "forge-std/console.sol";
+
 
 contract Liquisafe is Initializable, AccessControlUpgradeable, IERC721Receiver {
     bytes32 public constant CONTROLLER_ROLE = keccak256("CONTROLLER_ROLE");
@@ -73,6 +74,12 @@ contract Liquisafe is Initializable, AccessControlUpgradeable, IERC721Receiver {
         Order order
     );
 
+    event Executed(
+        address indexed sender,
+        uint256 indexed orderIndex,
+        Order order
+    );
+
     error NotAContract();
     error UnauthorizedFactory();
     error PoolNotFound();
@@ -82,6 +89,7 @@ contract Liquisafe is Initializable, AccessControlUpgradeable, IERC721Receiver {
     error InsufficientLiquidity();
     error IncorrectReceiver();
     error IncorrectPositionId();
+    error NotOwner();
 
     function initialize(
         address _priceOracle,
@@ -204,65 +212,139 @@ contract Liquisafe is Initializable, AccessControlUpgradeable, IERC721Receiver {
         emit Add(msg.sender, receiver, allOrders.length - 1, newOrder);
     }
 
-    function executeOrders(uint256[] calldata orderIndexes) external {
+    function executeOrders(
+        uint256[] calldata orderIndexes
+    ) external returns (bool[] memory executed) {
+        executed = new bool[](orderIndexes.length);
         for (uint256 i = 0; i < orderIndexes.length; i++) {
-            Order memory order = allOrders[orderIndexes[i]];
+            uint256 index = orderIndexes[i];
+            Order memory order = allOrders[index];
+            // don't threat if not possible
             if (_canExecuteOrder(order)) {
-                if (order.orderType == OrderType.UniV2) {
-                    IERC20(order.pool).transferFrom(
-                        order.owner,
-                        order.pool,
-                        order.amountLiquidity
-                    );
-                    if (order.orderRole == OrderRole.Withdraw) {
-                        // withdraw token to receiver address
-                        IUniswapV2Pair(order.pool).burn(order.receiver);
-                    }
-                } else if (order.orderType == OrderType.UniV3) {
-                    INonfungiblePositionManager nonfungiblePositionManager = INonfungiblePositionManager(
-                            order.positionManager
-                        );
-                    // amount0Min and amount1Min are price slippage checks
-                    // if the amount received after burning is not greater than these minimums, transaction will fail
-                    INonfungiblePositionManager.DecreaseLiquidityParams
-                        memory params = INonfungiblePositionManager
-                            .DecreaseLiquidityParams({
-                                tokenId: order.positionId,
-                                liquidity: order.amountLiquidity,
-                                amount0Min: 0,
-                                amount1Min: 0,
-                                deadline: block.timestamp
-                            });
-
-                    (
-                        uint256 amount0,
-                        uint256 amount1
-                    ) = nonfungiblePositionManager.decreaseLiquidity(params);
-
-                    //send liquidity back to owner
-                    IERC20(order.token0).transfer(order.owner, amount0);
-                    IERC20(order.token1).transfer(order.owner, amount1);
-                } else {
-                    revert NotImplemented();
-                }
+                _executeOrder(order);
+                allOrders[index].orderStatus = OrderStatus.Executed;
+                executed[index] = true;
+                emit Executed(msg.sender, index, order);
+            } else {
+                executed[index] = false;
             }
         }
     }
 
+    function cancelOrder(uint256 index) external {
+        Order storage order = allOrders[index];
+        if (order.owner != msg.sender) {
+            revert NotOwner();
+        }
+
+        if (order.orderStatus != OrderStatus.Active) {
+            revert OrderNotActive();
+        }
+
+        order.orderStatus = OrderStatus.Canceled;
+    }
+
     function onERC721Received(
-        address operator,
         address,
-        uint256 tokenId,
+        address,
+        uint256,
         bytes calldata
     ) external override returns (bytes4) {
-        // get position information
-        //_createDeposit(operator, tokenId);
         return this.onERC721Received.selector;
     }
 
     function canExecuteOrder(uint256 index) external view returns (bool) {
         Order memory order = allOrders[index];
         return _canExecuteOrder(order);
+    }
+
+    function countOrders() external view returns (uint256) {
+        return allOrders.length;
+    }
+
+    function fetchPageOrders(
+        uint256 cursor,
+        uint256 howMany
+    ) external view returns (Order[] memory values, uint256 newCursor) {
+        uint256 length = howMany;
+        uint256 orderCount = allOrders.length;
+        if (length > orderCount - cursor) {
+            length = orderCount - cursor;
+        }
+
+        values = new Order[](length);
+        for (uint256 i = 0; i < length; i++) {
+            Order memory order = allOrders[i];
+            values[i] = order;
+        }
+
+        return (values, cursor + length);
+    }
+
+    function getExecutableOrders(
+        uint256[] calldata orderIndexes
+    ) external view returns (bool[] memory executed) {
+        executed = new bool[](orderIndexes.length);
+        for (uint256 i = 0; i < orderIndexes.length; i++) {
+            uint256 index = orderIndexes[i];
+            Order memory order = allOrders[index];
+            // don't threat if not possible
+            if (_canExecuteOrder(order)) {
+                executed[index] = true;
+            } else {
+                executed[index] = false;
+            }
+        }
+    }
+
+    function _executeOrder(Order memory order) private {
+        if (order.orderType == OrderType.UniV2) {
+            IUniswapV2Pair pair = IUniswapV2Pair(order.pool);
+            pair.transferFrom(
+                order.owner,
+                address(pair),
+                order.amountLiquidity
+            );
+            if (order.orderRole == OrderRole.Withdraw) {
+                // withdraw token to receiver address
+                pair.burn(order.receiver);
+            }
+        } else if (order.orderType == OrderType.UniV3) {
+            INonfungiblePositionManager nonfungiblePositionManager = INonfungiblePositionManager(
+                    order.positionManager
+                );
+
+            // amount0Min and amount1Min are price slippage checks
+            // if the amount received after burning is not greater than these minimums, transaction will fail
+            INonfungiblePositionManager.DecreaseLiquidityParams
+                memory params = INonfungiblePositionManager
+                    .DecreaseLiquidityParams({
+                        tokenId: order.positionId,
+                        liquidity: order.amountLiquidity,
+                        amount0Min: 0,
+                        amount1Min: 0,
+                        deadline: block.timestamp
+                    });
+
+             nonfungiblePositionManager
+                .decreaseLiquidity(params);
+
+            INonfungiblePositionManager.CollectParams
+                memory params2 = INonfungiblePositionManager.CollectParams({
+                    tokenId: order.positionId,
+                    recipient: address(this),
+                    amount0Max: type(uint128).max,
+                    amount1Max: type(uint128).max
+                });
+
+            (uint256 amount0, uint256 amount1) = nonfungiblePositionManager.collect(params2);
+
+                      //send liquidity back to owner
+            IERC20(order.token0).transfer(order.receiver, amount0);
+            IERC20(order.token1).transfer(order.receiver, amount1);
+        } else {
+            revert NotImplemented();
+        }
     }
 
     function _canExecuteOrder(
@@ -276,10 +358,9 @@ contract Liquisafe is Initializable, AccessControlUpgradeable, IERC721Receiver {
             (uint256 price, uint256 decimals) = priceOracle.getAssetPriceInUsd(
                 order.token0
             );
-            if (
-                (price * 10 ** decimalsUsd) <=
-                (order.minAmountToken0Usd * 10 ** decimals)
-            ) {
+            uint256 actualPrice = price * 10 ** decimalsUsd;
+            uint256 minPrice = order.minAmountToken0Usd * 10 ** decimals;
+            if (minPrice >= actualPrice) {
                 return true;
             }
         }
@@ -288,13 +369,14 @@ contract Liquisafe is Initializable, AccessControlUpgradeable, IERC721Receiver {
             (uint256 price, uint256 decimals) = priceOracle.getAssetPriceInUsd(
                 order.token1
             );
-            if (
-                (price * 10 ** decimalsUsd) <=
-                (order.minAmountToken1Usd * 10 ** decimals)
-            ) {
+            uint256 actualPrice = price * 10 ** decimalsUsd;
+            uint256 minPrice = order.minAmountToken1Usd * 10 ** decimals;
+            if (minPrice >= actualPrice) {
                 return true;
             }
         }
+
+        return false;
     }
 
     function _isContract(address addr) private view returns (bool) {
