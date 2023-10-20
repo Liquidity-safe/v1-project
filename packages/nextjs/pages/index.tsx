@@ -2,11 +2,16 @@ import Link from "next/link";
 import type { NextPage } from "next";
 import { BugAntIcon, MagnifyingGlassIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import { MetaHeader } from "~~/components/MetaHeader";
+import { ListOrder } from "~~/components/orders/list-order";
 
 const Home: NextPage = () => {
   return (
     <>
       <MetaHeader />
+
+      <div className="flex-grow bg-base-300 w-full mt-16 px-8 py-12">
+        <ListOrder></ListOrder>
+      </div>
       <div className="flex items-center flex-col flex-grow pt-10">
         <div className="px-5">
           <h1 className="text-center mb-8">

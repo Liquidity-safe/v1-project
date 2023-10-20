@@ -1,0 +1,86 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+@import "variables";
+
+:root,
+[data-theme] {
+  /* background: hsl(var(--b2)); */
+  background: rgb(28, 28, 40);
+}
+
+body {
+  min-height: 100vh;
+}
+
+html,
+body {
+  font-size: 1rem;
+}
+
+// .navbar {
+//   width: 100vw;
+// }
+
+h1,
+h2,
+h3,
+h4 {
+  margin-bottom: 0.5rem;
+  line-height: 1;
+}
+
+p {
+  margin: 1rem 0;
+}
+
+.btn {
+  @apply shadow-md;
+}
+
+.btn.btn-ghost {
+  @apply shadow-none;
+}
+
+.home {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  flex: 1;
+
+  border-bottom: $border-line;
+
+  .home-header {
+    border-bottom: $border-line;
+  }
+
+  .home-content {
+    display: flex;
+    flex-direction: row;
+    flex: 1;
+    flex-wrap: wrap;
+  }
+
+  .home-menu {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    border-right: $border-line;
+  }
+
+  .home-status {
+    padding: 10px;
+  }
+
+  .home-panel {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+}
+
+@media (max-width: 900px) {
+  .home-content {
+    flex-direction: column !important;
+  }
+}

@@ -11,18 +11,22 @@
     "generate": "node script/generateAccount.js",
     "lint": "forge fmt",
     "test": "forge test",
-    "verify": "forge build --build-info --build-info-path out/build-info/ && forge script script/VerifyAll.s.sol --ffi --rpc-url ${1:-default_network}"
+    "verify": "forge build --build-info --build-info-path out/build-info/ && forge script script/VerifyAll.s.sol --ffi --rpc-url ${1:-default_network}",
+    "typechain": "typechain --target ethers-v6 --out-dir out/typechain 'out/*.sol/*.json'"
   },
   "dependencies": {
     "@chainlink/contracts": "^0.8.0",
     "@openzeppelin/contracts": "^5.0.0",
     "@openzeppelin/contracts-upgradeable": "^5.0.0",
+    "@typechain/ethers-v6": "^0.5.1",
+    "bun": "^1.0.6",
     "dotenv": "~16.3.1",
     "envfile": "~6.18.0",
-    "ethers": "~5.7.1",
+    "ethers": "^6.8.0",
     "prettier": "~2.8.8",
     "qrcode": "~1.5.3",
-    "toml": "~3.0.0"
+    "toml": "~3.0.0",
+    "typechain": "^8.3.2"
   },
   "devDependencies": {
     "@types/prettier": "2",
