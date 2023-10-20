@@ -41,7 +41,7 @@ yarn install
 2. Run a local network in the first terminal:
 
 ```
-yarn chain
+yarn fork
 ```
 
 This command starts a local Ethereum network using Hardhat. The network runs on your local machine and can be used for testing and development. You can customize the network configuration in `hardhat.config.ts`.
