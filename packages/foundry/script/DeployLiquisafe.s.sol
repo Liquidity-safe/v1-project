@@ -25,7 +25,7 @@ contract DeployLiquisafeScript is ScaffoldETHDeploy {
         ERC20(0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599);
 
     ERC20 public constant linkToken =
-        ERC20(0x350a791Bfc2C21F9Ed5d10980Dad2e2638ffa7f6);
+        ERC20(0x514910771af9ca656af840dff83e8264ecf986ca);
 
     address public constant uniswapV2Factory =
         0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
@@ -75,6 +75,11 @@ contract DeployLiquisafeScript is ScaffoldETHDeploy {
             0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6
         );
 
+        priceOracle.addPriceFeed(
+            address(linkToken),
+            0x2c1d072e956AFFC0D435Cb7AC38EF18d24d9127c
+        );
+
         liquisafe = Liquisafe(
             _deployProxy(
                 address(new Liquisafe()),
@@ -108,7 +113,6 @@ contract DeployLiquisafeScript is ScaffoldETHDeploy {
          */
         exportDeployments();
     }
-
 
     function _deployProxy(
         address implementation_,

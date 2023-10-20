@@ -144,7 +144,7 @@ contract Liquisafe is Initializable, AccessControlUpgradeable, IERC721Receiver {
         priceOracle = IPriceOracle(_priceOracle);
     }
 
- //  orders CRUD
+    //  orders CRUD
 
     function addOrder(
         OrderType orderType,
@@ -195,6 +195,7 @@ contract Liquisafe is Initializable, AccessControlUpgradeable, IERC721Receiver {
             revert PoolNotFound();
         }
 
+        // simply add order, user don't deposit liquidity in the contract
         Order memory newOrder = Order(
             OrderStatus.Active,
             orderType,
@@ -247,14 +248,14 @@ contract Liquisafe is Initializable, AccessControlUpgradeable, IERC721Receiver {
         order.orderStatus = OrderStatus.Canceled;
     }
 
-    // 
+    // view functions
 
     function onERC721Received(
         address,
         address,
         uint256,
         bytes calldata
-    ) external override pure returns (bytes4) {
+    ) external pure override returns (bytes4) {
         return this.onERC721Received.selector;
     }
 
@@ -301,6 +302,8 @@ contract Liquisafe is Initializable, AccessControlUpgradeable, IERC721Receiver {
             }
         }
     }
+
+    // private functions
 
     function _executeOrder(Order memory order) private {
         if (order.orderType == OrderType.UniV2) {
@@ -359,6 +362,7 @@ contract Liquisafe is Initializable, AccessControlUpgradeable, IERC721Receiver {
             revert OrderNotActive();
         }
 
+        // can execute only if price equal or more than trigger price
         if (order.minAmountToken0Usd > 0) {
             (uint256 price, uint256 decimals) = priceOracle.getAssetPriceInUsd(
                 order.token0

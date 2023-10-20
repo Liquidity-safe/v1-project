@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import addresses from "../constants/addresses";
-import { ethers } from "ethers";
+import { useCallback, useEffect, useRef, useState } from "react";
+import addresses from "../constants/tokens";
+import { CreateOrder } from "./create-order";
 import toast from "react-hot-toast";
 import { useNetwork } from "wagmi";
 import { useDeployedContractInfo } from "~~/hooks/scaffold-eth";
@@ -8,16 +8,20 @@ import { useEthersSigner } from "~~/services/ethers";
 import { Liquisafe__factory } from "~~/types/typechain";
 import { Liquisafe } from "~~/types/typechain/Liquisafe";
 import { formatNumber } from "~~/utils/format-number";
-import { getContractNames } from "~~/utils/scaffold-eth/contractNames";
 
 export const ListOrder = ({}) => {
   const [orderList, setOrderList] = useState<Liquisafe.OrderStructOutput[]>([]);
-  const [chainId, setChainId] = useState(420);
+  const [chainId, setChainId] = useState(1);
   const [user, setUser] = useState("");
   const { chain } = useNetwork();
   const signer = useEthersSigner();
   //const contractNames = getContractNames();
   const { data: deployedContractData, isLoading: deployedContractLoading } = useDeployedContractInfo("Liquisafe");
+
+  const ref = useRef<HTMLDialogElement>(null);
+  const handleShow = useCallback(() => {
+    ref.current?.showModal();
+  }, [ref]);
 
   useEffect(() => {
     setChainId(chain?.id || 420);
@@ -131,21 +135,18 @@ export const ListOrder = ({}) => {
 
   return (
     <div className="order-list">
+      <button className="btn" onClick={handleShow}>
+        Add order
+      </button>
       <div>All orders</div>
       <table>
         <tr>
           <th>Status</th>
           <th>Type</th>
-          <th>
-            Size <span className="info"></span>
-          </th>
-          <th>
-            Price <span className="info"></span>
-          </th>
-          <th>
-            Trigger <span className="info"></span>
-          </th>
-          <th>Date</th>
+          <th>Min price Token 0</th>
+          <th>Min price Token 1</th>
+          <th>Liquidity amount</th>
+          <th>Pool</th>
           <th>Mine</th>
           <th>Action</th>
         </tr>
@@ -155,8 +156,8 @@ export const ListOrder = ({}) => {
             <td>{getType(el.orderType)}</td>
             <td>{formatNumber(parseInt(el.minAmountToken0Usd))}</td>
             <td>{formatNumber(parseInt(el.minAmountToken1Usd))}</td>
-            <td>{getTrigger(false, el)}</td>
-            <td></td>
+            <td>{formatNumber(parseInt(el.amountLiquidity))}</td>
+            <td>{el.pool}</td>
             <td>{isMine(el.owner) ? "✓" : "-"}</td>
             <td>
               {isMine(el.owner) && el.orderStatus.toString() === "1" && (
@@ -168,6 +169,12 @@ export const ListOrder = ({}) => {
           </tr>
         ))}
       </table>
+
+      <dialog ref={ref} className="modal">
+        <div className="modal-box">
+          <CreateOrder></CreateOrder>
+        </div>
+      </dialog>
     </div>
   );
 };
