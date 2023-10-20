@@ -16,7 +16,6 @@ import "./interfaces/uni-v3/periphery/INonfungiblePositionManager.sol";
 
 //import {console} from "forge-std/console.sol";
 
-
 contract Liquisafe is Initializable, AccessControlUpgradeable, IERC721Receiver {
     bytes32 public constant CONTROLLER_ROLE = keccak256("CONTROLLER_ROLE");
     uint8 public constant decimalsUsd = 8;
@@ -108,6 +107,8 @@ contract Liquisafe is Initializable, AccessControlUpgradeable, IERC721Receiver {
         WETH = IWETH(_WETH);
     }
 
+    // management part
+
     function setFactory(
         address factory,
         bool authorized
@@ -142,6 +143,8 @@ contract Liquisafe is Initializable, AccessControlUpgradeable, IERC721Receiver {
         }
         priceOracle = IPriceOracle(_priceOracle);
     }
+
+ //  orders CRUD
 
     function addOrder(
         OrderType orderType,
@@ -244,12 +247,14 @@ contract Liquisafe is Initializable, AccessControlUpgradeable, IERC721Receiver {
         order.orderStatus = OrderStatus.Canceled;
     }
 
+    // 
+
     function onERC721Received(
         address,
         address,
         uint256,
         bytes calldata
-    ) external override returns (bytes4) {
+    ) external override pure returns (bytes4) {
         return this.onERC721Received.selector;
     }
 
@@ -326,8 +331,7 @@ contract Liquisafe is Initializable, AccessControlUpgradeable, IERC721Receiver {
                         deadline: block.timestamp
                     });
 
-             nonfungiblePositionManager
-                .decreaseLiquidity(params);
+            nonfungiblePositionManager.decreaseLiquidity(params);
 
             INonfungiblePositionManager.CollectParams
                 memory params2 = INonfungiblePositionManager.CollectParams({
@@ -337,9 +341,10 @@ contract Liquisafe is Initializable, AccessControlUpgradeable, IERC721Receiver {
                     amount1Max: type(uint128).max
                 });
 
-            (uint256 amount0, uint256 amount1) = nonfungiblePositionManager.collect(params2);
+            (uint256 amount0, uint256 amount1) = nonfungiblePositionManager
+                .collect(params2);
 
-                      //send liquidity back to owner
+            //send liquidity back to owner
             IERC20(order.token0).transfer(order.receiver, amount0);
             IERC20(order.token1).transfer(order.receiver, amount1);
         } else {

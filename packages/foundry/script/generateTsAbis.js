@@ -15,11 +15,21 @@ function getFiles(path) {
   });
 }
 function getAbiOfContract(contractName) {
-  const current_path_to_artifacts = path.join(
+  let current_path_to_artifacts = path.join(
     __dirname,
     "..",
     `out/${contractName}.sol`
   );
+
+  // to find proxy
+  if(contractName === "ProxyAdmin" || contractName === "TransparentUpgradeableProxy"){
+     current_path_to_artifacts = path.join(
+      __dirname,
+      "..",
+      `out/proxy/transparent/${contractName}.sol`
+    );
+  }
+ 
   const artifactJson = JSON.parse(
     fs.readFileSync(`${current_path_to_artifacts}/${contractName}.json`)
   );
@@ -31,7 +41,7 @@ function main() {
   const current_path_to_broadcast = path.join(
     __dirname,
     "..",
-    "broadcast/Deploy.s.sol"
+    "broadcast/DeployLiquisafe.s.sol"
   );
   const current_path_to_deployments = path.join(__dirname, "..", "deployments");
 
