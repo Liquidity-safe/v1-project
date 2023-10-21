@@ -3,4 +3,6 @@ forge-std/=lib/forge-std/src/
 solidity-bytes-utils/=lib/solidity-bytes-utils/contracts/
 @openzeppelin2=node_modules/@openzeppelin
 @chainlink=node_modules/@chainlink
-@uniswap=node_modules/@uniswap
+
+periphery-next=lib/periphery-next
+@uniswap/v4-core/=lib/periphery-next/lib/v4-core/
