@@ -18,11 +18,6 @@ export const ListOrder = ({}) => {
   //const contractNames = getContractNames();
   const { data: deployedContractData, isLoading: deployedContractLoading } = useDeployedContractInfo("Liquisafe");
 
-  const ref = useRef<HTMLDialogElement>(null);
-  const handleShow = useCallback(() => {
-    ref.current?.showModal();
-  }, [ref]);
-
   useEffect(() => {
     setChainId(chain?.id || 420);
 
@@ -135,9 +130,8 @@ export const ListOrder = ({}) => {
 
   return (
     <div className="order-list">
-      <button className="btn" onClick={handleShow}>
-        Add order
-      </button>
+      <CreateOrder></CreateOrder>
+
       <div>All orders</div>
       <table>
         <tr>
@@ -169,12 +163,6 @@ export const ListOrder = ({}) => {
           </tr>
         ))}
       </table>
-
-      <dialog ref={ref} className="modal">
-        <div className="modal-box">
-          <CreateOrder></CreateOrder>
-        </div>
-      </dialog>
     </div>
   );
 };

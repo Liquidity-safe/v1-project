@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import tokens from "../constants/tokens";
 import { ethers } from "ethers";
 import toast from "react-hot-toast";
+import Modal from "react-modal";
 import { useNetwork } from "wagmi";
 import { useDeployedContractInfo } from "~~/hooks/scaffold-eth";
 import { useEthersSigner } from "~~/services/ethers";
 import { Liquisafe__factory, PriceOracle__factory } from "~~/types/typechain";
 import { Liquisafe } from "~~/types/typechain/Liquisafe";
 
-export const CreateOrder = ({ close }) => {
+export const CreateOrder = ({}) => {
   const [chainId, setChainId] = useState(31337);
   const [platform, setPlatform] = useState("v2");
   const [tokenA, setTokenA] = useState("WETH");
@@ -24,6 +25,7 @@ export const CreateOrder = ({ close }) => {
   const signer = useEthersSigner();
   const { data: deployedContractData, isLoading: deployedContractLoading } = useDeployedContractInfo("Liquisafe");
   const { data: oracleContractData, isLoading: oracleContractLoading } = useDeployedContractInfo("PriceOracle");
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     setChainId(chain?.id || 1);
@@ -38,12 +40,12 @@ export const CreateOrder = ({ close }) => {
   useEffect(() => {
     setChainId(chain?.id || 1);
 
-    if (!oracleContractLoading && oracleContractData && chain && signer) {
+    if (!oracleContractLoading && oracleContractData && chain && signer && open) {
       getPrice().then;
 
       console.log("chain id", chain.id);
     }
-  }, [chain, signer, oracleContractLoading, oracleContractData, tokenA, tokenB]);
+  }, [chain, signer, oracleContractLoading, oracleContractData, tokenA, tokenB, open]);
 
   const getPrice = async () => {
     const oracle = PriceOracle__factory.connect(oracleContractData!.address, signer);
@@ -79,72 +81,93 @@ export const CreateOrder = ({ close }) => {
     }
   };
 
+  const customStyles = {
+    content: {
+      top: "50%",
+      left: "50%",
+      right: "auto",
+      bottom: "auto",
+      marginRight: "-50%",
+      transform: "translate(-50%, -50%)",
+      backgroundColor: "rgb(57, 82, 132)",
+    },
+  };
+
   return (
-    <div className="trade-info">
-      <span className="block text-2xl">Create Order</span>
-      <div className="trade-content">
-        <div className="token-info">
-          <span>Platform</span>
-          <select className="s-select" value={platform} onChange={e => setPlatform(e.target.value)}>
-            <option value={"v2"}>Uniswap v2</option>
-            <option value={"v3"}>Uniswap v3</option>
-          </select>
-        </div>
-        <div className="token-info">
-          <span> Token A</span>
-          <select className="s-select" value={tokenA} onChange={e => setTokenA(e.target.value)}>
-            <option value={"WETH"}>WETH</option>
-            <option value={"USDC"}>USDC</option>
-            <option value={"WBTC"}>WBTC</option>
-          </select>
-          <span>{priceA}$</span>
-        </div>
-        <div className="token-info">
-          <span> Token B</span>
-          <select className="s-select" value={tokenB} onChange={e => setTokenB(e.target.value)}>
-            <option value={"WETH"}>WETH</option>
-            <option value={"USDC"}>USDC</option>
-            <option value={"WBTC"}>WBTC</option>
-          </select>
-          <span>{priceB}$</span>
-        </div>
-        {platform === "v3" && (
-          <div className="token-info">
-            <span>Pool fee %</span>
-            <input
-              className="s-input"
-              type="number"
-              defaultValue={poolFee}
-              onChange={e => setPoolFee(e.target.value)}
-            ></input>
+    <div>
+      <button className="btn" onClick={() => setOpen(true)}>
+        Add order
+      </button>
+      <Modal style={customStyles} isOpen={open} contentLabel="Create order">
+        <div className="bg-base-100">
+          <div className="trade-info">
+            <span className="block text-2xl">Create Order</span>
+            <div className="trade-content">
+              <div className="token-info">
+                <span>Platform</span>
+                <select className="s-select" value={platform} onChange={e => setPlatform(e.target.value)}>
+                  <option value={"v2"}>Uniswap v2</option>
+                  <option value={"v3"}>Uniswap v3</option>
+                </select>
+              </div>
+              <div className="token-info">
+                <span> Token A</span>
+                <select className="s-select" value={tokenA} onChange={e => setTokenA(e.target.value)}>
+                  <option value={"WETH"}>WETH</option>
+                  <option value={"USDC"}>USDC</option>
+                  <option value={"WBTC"}>WBTC</option>
+                </select>
+                <span>{priceA}$</span>
+              </div>
+              <div className="token-info">
+                <span> Token B</span>
+                <select className="s-select" value={tokenB} onChange={e => setTokenB(e.target.value)}>
+                  <option value={"WETH"}>WETH</option>
+                  <option value={"USDC"}>USDC</option>
+                  <option value={"WBTC"}>WBTC</option>
+                </select>
+                <span>{priceB}$</span>
+              </div>
+              {platform === "v3" && (
+                <div className="token-info">
+                  <span>Pool fee %</span>
+                  <input
+                    className="s-input"
+                    type="number"
+                    defaultValue={poolFee}
+                    onChange={e => setPoolFee(e.target.value)}
+                  ></input>
+                </div>
+              )}
+              <div className="token-info">
+                <span>Trigger A $</span>
+                <input
+                  className="s-input"
+                  type="number"
+                  defaultValue={amountA}
+                  onChange={e => setAmountA(e.target.value)}
+                ></input>
+                <span>0 for no trigger</span>
+              </div>
+              <div className="token-info">
+                <span>Trigger B $</span>
+                <input
+                  className="s-input"
+                  type="number"
+                  defaultValue={amountB}
+                  onChange={e => setAmountB(e.target.value)}
+                ></input>
+                <span>0 for no trigger</span>
+              </div>
+            </div>
+            <div style={{ textAlign: "center" }}>
+              <button className="s-button" onClick={() => setOpen(false)}>
+                Close
+              </button>
+            </div>
           </div>
-        )}
-        <div className="token-info">
-          <span>Trigger A $</span>
-          <input
-            className="s-input"
-            type="number"
-            defaultValue={amountA}
-            onChange={e => setAmountA(e.target.value)}
-          ></input>
-          <span>0 for no trigger</span>
         </div>
-        <div className="token-info">
-          <span>Trigger B $</span>
-          <input
-            className="s-input"
-            type="number"
-            defaultValue={amountB}
-            onChange={e => setAmountB(e.target.value)}
-          ></input>
-          <span>0 for no trigger</span>
-        </div>
-      </div>
-      <div style={{ textAlign: "center" }}>
-        <form method="dialog">
-          <button className="s-button">Close</button>
-        </form>
-      </div>
+      </Modal>
     </div>
   );
 };
