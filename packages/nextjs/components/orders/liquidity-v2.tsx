@@ -5,8 +5,9 @@ import toast from "react-hot-toast";
 import { useNetwork } from "wagmi";
 import { useDeployedContractInfo } from "~~/hooks/scaffold-eth";
 import { useEthersSigner } from "~~/services/ethers";
-import { IERC20__factory, IUniswapV2Factory__factory, Liquisafe__factory } from "~~/types/typechain";
+import { IERC20, IERC20__factory, IUniswapV2Factory__factory, Liquisafe__factory } from "~~/types/typechain";
 import { formatNumber } from "~~/utils/format-number";
+import { parseCustomError } from "~~/utils/parse-custom-error";
 
 export const LiqudityV2 = ({ dex, tokenA, tokenB }) => {
   const [liquidity, setLiquidity] = useState<bigint>();
@@ -51,15 +52,21 @@ export const LiqudityV2 = ({ dex, tokenA, tokenB }) => {
   };
 
   const approve = async () => {
-    const factory = IUniswapV2Factory__factory.connect(dex, signer);
-    const pair = await factory.getPair(tokenA, tokenB);
-    const erc20 = IERC20__factory.connect(pair, signer);
-    const tx = await erc20.approve(deployedContractData!.address, liquidity);
-    await tx.wait();
-    const allowance = await erc20.allowance(user, deployedContractData!.address);
-    console.log("allowance", allowance);
-    const allow = allowance >= liquidity;
-    setAllowed(allow);
+    try {
+      const factory = IUniswapV2Factory__factory.connect(dex, signer);
+      const pair = await factory.getPair(tokenA, tokenB);
+      const erc20 = IERC20__factory.connect(pair, signer);
+      const tx = await erc20.approve(deployedContractData!.address, liquidity);
+      await tx.wait();
+      const allowance = await erc20.allowance(user, deployedContractData!.address);
+      console.log("allowance", allowance);
+      const allow = allowance >= liquidity;
+      setAllowed(allow);
+    } catch (err) {
+      const contract = IERC20__factory.connect(deployedContractData!.address);
+      const parsed = parseCustomError(err, contract);
+      console.log("approve error", parsed);
+    }
   };
 
   return (
