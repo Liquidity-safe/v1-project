@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import tokens from "../constants/tokens";
+import { LiqudityV2 } from "./liquidity-v2";
 import { ethers } from "ethers";
 import toast from "react-hot-toast";
 import Modal from "react-modal";
@@ -16,9 +17,11 @@ export const CreateOrder = ({}) => {
   const [tokenB, setTokenB] = useState("USDC");
   const [priceA, setPriceA] = useState("");
   const [priceB, setPriceB] = useState("");
+  const [adrTokenA, setAdrTokenA] = useState("");
+  const [adrTokenB, setAdrTokenB] = useState("");
   const [amountA, setAmountA] = useState(0);
   const [amountB, setAmountB] = useState(0);
-  const [poolFee, setPoolFee] = useState(0);
+  const [amountLiquidity, setAmountLiquidity] = useState(0);
   const [fee, setFee] = useState(500);
   const [swap, setSwap] = useState(["Uniswap V2", "Uniswap V3"]);
   const { chain } = useNetwork();
@@ -54,6 +57,7 @@ export const CreateOrder = ({}) => {
     if (tokA) {
       console.log("tokA", tokA);
       const adrTokA = tokA.addresses.find(x => x.chainId === chain?.id);
+      setAdrTokenA(adrTokA?.address);
       if (adrTokA) {
         console.log("adrTokA", adrTokA);
         const dataA = await oracle.getAssetPriceInUsd(adrTokA.address);
@@ -68,6 +72,7 @@ export const CreateOrder = ({}) => {
     }
     if (tokB) {
       const adrTokB = tokB.addresses.find(x => x.chainId === chain?.id);
+      setAdrTokenB(adrTokB?.address);
       if (adrTokB) {
         const dataB = await oracle.getAssetPriceInUsd(adrTokB.address);
         const priceB = ethers.formatUnits(dataB.price, dataB.decimals);
@@ -110,7 +115,7 @@ export const CreateOrder = ({}) => {
               </select>
             </div>
             <div className="token-info">
-              <span> Token A</span>
+              <span>Token A</span>
               <select className="s-select" value={tokenA} onChange={e => setTokenA(e.target.value)}>
                 <option value={"WETH"}>WETH</option>
                 <option value={"USDC"}>USDC</option>
@@ -119,7 +124,7 @@ export const CreateOrder = ({}) => {
               <span>{priceA}$</span>
             </div>
             <div className="token-info">
-              <span> Token B</span>
+              <span>Token B</span>
               <select className="s-select" value={tokenB} onChange={e => setTokenB(e.target.value)}>
                 <option value={"WETH"}>WETH</option>
                 <option value={"USDC"}>USDC</option>
@@ -127,17 +132,15 @@ export const CreateOrder = ({}) => {
               </select>
               <span>{priceB}$</span>
             </div>
-            {/* {platform === "v3" && (
-              <div className="token-info">
-                <span>Pool fee %</span>
-                <input
-                  className="s-input"
-                  type="number"
-                  defaultValue={poolFee}
-                  onChange={e => setPoolFee(e.target.value)}
-                ></input>
-              </div>
-            )} */}
+            <div className="token-info">
+              <span>Liquidity amount</span>
+              <input
+                className="s-input"
+                type="number"
+                defaultValue={amountLiquidity}
+                onChange={e => setAmountLiquidity(e.target.value)}
+              ></input>
+            </div>
             <div className="token-info">
               <span>Trigger A $</span>
               <input
@@ -159,6 +162,15 @@ export const CreateOrder = ({}) => {
               <span>0 for no trigger</span>
             </div>
           </div>
+          {platform === "v3" && (
+            <div>
+              <LiqudityV2
+                dex="0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f"
+                tokenA={adrTokenA}
+                tokenB={adrTokenB}
+              ></LiqudityV2>
+            </div>
+          )}
           <div style={{ textAlign: "center" }}>
             <button className="s-button" onClick={() => setOpen(false)}>
               Close

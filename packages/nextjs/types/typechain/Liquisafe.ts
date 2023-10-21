@@ -77,7 +77,8 @@ export interface LiquisafeInterface extends Interface {
       | "CONTROLLER_ROLE"
       | "DEFAULT_ADMIN_ROLE"
       | "WETH"
-      | "addOrder"
+      | "addOrderV2"
+      | "addOrderV3"
       | "allOrders"
       | "authorizedFactories"
       | "canExecuteOrder"
@@ -123,15 +124,24 @@ export interface LiquisafeInterface extends Interface {
   ): string;
   encodeFunctionData(functionFragment: "WETH", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: "addOrder",
+    functionFragment: "addOrderV2",
     values: [
       BigNumberish,
-      BigNumberish,
       AddressLike,
       AddressLike,
       AddressLike,
       AddressLike,
       BigNumberish,
+      BigNumberish,
+      BigNumberish
+    ]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "addOrderV3",
+    values: [
+      BigNumberish,
+      AddressLike,
+      AddressLike,
       BigNumberish,
       BigNumberish,
       BigNumberish,
@@ -240,7 +250,8 @@ export interface LiquisafeInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "WETH", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "addOrder", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "addOrderV2", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "addOrderV3", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "allOrders", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "authorizedFactories",
@@ -483,16 +494,27 @@ export interface Liquisafe extends BaseContract {
 
   WETH: TypedContractMethod<[], [string], "view">;
 
-  addOrder: TypedContractMethod<
+  addOrderV2: TypedContractMethod<
     [
-      orderType: BigNumberish,
       orderRole: BigNumberish,
       receiver: AddressLike,
       factory: AddressLike,
       token0: AddressLike,
       token1: AddressLike,
-      fee: BigNumberish,
-      positionId: BigNumberish,
+      amountLiquidity: BigNumberish,
+      minAmountToken0Usd: BigNumberish,
+      minAmountToken1Usd: BigNumberish
+    ],
+    [void],
+    "nonpayable"
+  >;
+
+  addOrderV3: TypedContractMethod<
+    [
+      orderRole: BigNumberish,
+      receiver: AddressLike,
+      factory: AddressLike,
+      tokenId: BigNumberish,
       amountLiquidity: BigNumberish,
       minAmountToken0Usd: BigNumberish,
       minAmountToken1Usd: BigNumberish
@@ -668,17 +690,29 @@ export interface Liquisafe extends BaseContract {
     nameOrSignature: "WETH"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
-    nameOrSignature: "addOrder"
+    nameOrSignature: "addOrderV2"
   ): TypedContractMethod<
     [
-      orderType: BigNumberish,
       orderRole: BigNumberish,
       receiver: AddressLike,
       factory: AddressLike,
       token0: AddressLike,
       token1: AddressLike,
-      fee: BigNumberish,
-      positionId: BigNumberish,
+      amountLiquidity: BigNumberish,
+      minAmountToken0Usd: BigNumberish,
+      minAmountToken1Usd: BigNumberish
+    ],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "addOrderV3"
+  ): TypedContractMethod<
+    [
+      orderRole: BigNumberish,
+      receiver: AddressLike,
+      factory: AddressLike,
+      tokenId: BigNumberish,
       amountLiquidity: BigNumberish,
       minAmountToken0Usd: BigNumberish,
       minAmountToken1Usd: BigNumberish

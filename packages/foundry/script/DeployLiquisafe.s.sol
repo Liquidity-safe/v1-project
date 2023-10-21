@@ -42,9 +42,10 @@ contract DeployLiquisafeScript is ScaffoldETHDeploy {
     ProxyAdmin public proxyAdmin;
     Liquisafe public liquisafe;
     PriceOracle public priceOracle;
+    uint256 private deployerPrivateKey;
 
     function run() external {
-        uint256 deployerPrivateKey = setupLocalhostEnv();
+        deployerPrivateKey = setupLocalhostEnv();
         if (deployerPrivateKey == 0) {
             revert InvalidPrivateKey(
                 "You don't have a deployer account. Make sure you have set DEPLOYER_PRIVATE_KEY in .env or use `yarn generate` to generate a new random account"
@@ -60,25 +61,9 @@ contract DeployLiquisafeScript is ScaffoldETHDeploy {
             )
         );
 
-        priceOracle.addPriceFeed(
-            address(wEth),
-            0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419
-        );
-
-        priceOracle.addPriceFeed(
-            address(btcToken),
-            0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c
-        );
-
-        priceOracle.addPriceFeed(
-            address(usdcToken),
-            0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6
-        );
-
-        priceOracle.addPriceFeed(
-            address(linkToken),
-            0x2c1d072e956AFFC0D435Cb7AC38EF18d24d9127c
-        );
+        if (block.chainid == 31337) {
+            _deployTest();
+        }
 
         liquisafe = Liquisafe(
             _deployProxy(
@@ -126,5 +111,165 @@ contract DeployLiquisafeScript is ScaffoldETHDeploy {
                     initializer_
                 )
             );
+    }
+
+    function _deployTest() private {
+        // add price oracle
+        priceOracle.addPriceFeed(
+            address(wEth),
+            0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419
+        );
+
+        priceOracle.addPriceFeed(
+            address(btcToken),
+            0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c
+        );
+
+        priceOracle.addPriceFeed(
+            address(usdcToken),
+            0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6
+        );
+
+        priceOracle.addPriceFeed(
+            address(linkToken),
+            0x2c1d072e956AFFC0D435Cb7AC38EF18d24d9127c
+        );
+
+        address receiver = vm.addr(deployerPrivateKey);
+
+        // create liquidity
+        vm.deal(receiver, 10000 ether);
+
+        usdcToken.approve(
+            address(uniswapV2Router),
+            10_000 * 10 ** usdcToken.decimals()
+        );
+
+        address[] memory paths = new address[](2);
+        paths[0] = address(wEth);
+        paths[1] = address(usdcToken);
+
+        uniswapV2Router.swapExactETHForTokens{value: 1000 ether}(
+            0,
+            paths,
+            receiver,
+            block.timestamp + 10000
+        );
+
+        paths[1] = address(btcToken);
+        uniswapV2Router.swapExactETHForTokens{value: 1000 ether}(
+            0,
+            paths,
+            receiver,
+            block.timestamp + 10000
+        );
+
+        uint256 balance = usdcToken.balanceOf(receiver);
+
+        console.log("balance user %s amout %s", receiver, balance);
+
+        uniswapV2Router.addLiquidityETH{value: 10 ether}(
+            address(usdcToken),
+            10_000 * 10 ** usdcToken.decimals(),
+            10_000 * 10 ** usdcToken.decimals(),
+            5 ether,
+            receiver,
+            block.timestamp + 10000
+        );
+
+        btcToken.approve(
+            address(uniswapV2Router),
+            5 * 10 ** btcToken.decimals()
+        );
+
+        uniswapV2Router.addLiquidityETH{value: 90 ether}(
+            address(btcToken),
+            5 * 10 ** btcToken.decimals(),
+            1 * 10 ** btcToken.decimals(),
+            50 ether,
+            receiver,
+            block.timestamp + 10000
+        );
+
+        usdcToken.approve(
+            address(uniswapV3PositionManager),
+            10_000 * 10 ** usdcToken.decimals()
+        );
+        _mintV3(
+            uniswapV3PositionManager,
+            address(usdcToken),
+            address(wEth),
+            10_000 * 10 ** usdcToken.decimals(),
+            10 ether,
+            10 ether,
+            500
+        );
+
+        btcToken.approve(
+            address(uniswapV3PositionManager),
+            5 * 10 ** btcToken.decimals()
+        );
+
+        _mintV3(
+            uniswapV3PositionManager,
+            address(btcToken),
+            address(wEth),
+            5 * 10 ** btcToken.decimals(),
+            90 ether,
+            90 ether,
+            3000
+        );
+    }
+
+    /// @dev The minimum tick that may be passed to #getSqrtRatioAtTick computed from log base 1.0001 of 2**-128
+    int24 internal constant MIN_TICK = -887272;
+    /// @dev The maximum tick that may be passed to #getSqrtRatioAtTick computed from log base 1.0001 of 2**128
+    int24 internal constant MAX_TICK = -MIN_TICK;
+
+    function _mintV3(
+        address position,
+        address token0,
+        address token1,
+        uint256 amount0,
+        uint256 amount1,
+        uint256 amountEther,
+        uint24 fee
+    ) private {
+        address pool = IUniswapV3Factory(uniswapV3Factory).getPool(
+            address(token0),
+            address(token1),
+            fee
+        );
+        INonfungiblePositionManager nonfungiblePositionManager = INonfungiblePositionManager(
+                uniswapV3PositionManager
+            );
+
+        int24 tick = IUniswapV3Pool(pool).tickSpacing();
+
+        address receiver = vm.addr(deployerPrivateKey);
+        INonfungiblePositionManager.MintParams
+            memory params = INonfungiblePositionManager.MintParams({
+                token0: address(token0),
+                token1: address(token1),
+                fee: fee,
+                tickLower: getMinTick(tick),
+                tickUpper: getMaxTick(tick),
+                amount0Desired: amount0,
+                amount1Desired: amount1,
+                amount0Min: 0,
+                amount1Min: 0,
+                recipient: receiver,
+                deadline: block.timestamp + 10000
+            });
+
+        nonfungiblePositionManager.mint{value: amountEther}(params);
+    }
+
+    function getMinTick(int24 tickSpacing) internal pure returns (int24) {
+        return (MIN_TICK / tickSpacing) * tickSpacing;
+    }
+
+    function getMaxTick(int24 tickSpacing) internal pure returns (int24) {
+        return (MAX_TICK / tickSpacing) * tickSpacing;
     }
 }

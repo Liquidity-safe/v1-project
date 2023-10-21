@@ -531,7 +531,7 @@ const contracts = {
           ],
         },
         TransparentUpgradeableProxy: {
-          address: "0x92b0d1Cc77b84973B7041CB9275d41F09840eaDd",
+          address: "0xC0340c0831Aa40A0791cF8C3Ab4287EB0a9705d8",
           abi: [
             {
               inputs: [
@@ -641,7 +641,7 @@ const contracts = {
           ],
         },
         Liquisafe: {
-          address: "0x92b0d1Cc77b84973B7041CB9275d41F09840eaDd",
+          address: "0xC0340c0831Aa40A0791cF8C3Ab4287EB0a9705d8",
           abi: [
             {
               inputs: [],
@@ -717,6 +717,22 @@ const contracts = {
             {
               inputs: [],
               name: "PoolNotFound",
+              type: "error",
+            },
+            {
+              inputs: [
+                {
+                  internalType: "uint128",
+                  name: "",
+                  type: "uint128",
+                },
+              ],
+              name: "PositionInsufficientLiquidity",
+              type: "error",
+            },
+            {
+              inputs: [],
+              name: "PositionManagerNotFound",
               type: "error",
             },
             {
@@ -1044,11 +1060,6 @@ const contracts = {
             {
               inputs: [
                 {
-                  internalType: "enum Liquisafe.OrderType",
-                  name: "orderType",
-                  type: "uint8",
-                },
-                {
                   internalType: "enum Liquisafe.OrderRole",
                   name: "orderRole",
                   type: "uint8",
@@ -1074,13 +1085,46 @@ const contracts = {
                   type: "address",
                 },
                 {
-                  internalType: "uint24",
-                  name: "fee",
-                  type: "uint24",
+                  internalType: "uint128",
+                  name: "amountLiquidity",
+                  type: "uint128",
+                },
+                {
+                  internalType: "uint128",
+                  name: "minAmountToken0Usd",
+                  type: "uint128",
+                },
+                {
+                  internalType: "uint128",
+                  name: "minAmountToken1Usd",
+                  type: "uint128",
+                },
+              ],
+              name: "addOrderV2",
+              outputs: [],
+              stateMutability: "nonpayable",
+              type: "function",
+            },
+            {
+              inputs: [
+                {
+                  internalType: "enum Liquisafe.OrderRole",
+                  name: "orderRole",
+                  type: "uint8",
+                },
+                {
+                  internalType: "address",
+                  name: "receiver",
+                  type: "address",
+                },
+                {
+                  internalType: "address",
+                  name: "factory",
+                  type: "address",
                 },
                 {
                   internalType: "uint256",
-                  name: "positionId",
+                  name: "tokenId",
                   type: "uint256",
                 },
                 {
@@ -1099,7 +1143,7 @@ const contracts = {
                   type: "uint128",
                 },
               ],
-              name: "addOrder",
+              name: "addOrderV3",
               outputs: [],
               stateMutability: "nonpayable",
               type: "function",
