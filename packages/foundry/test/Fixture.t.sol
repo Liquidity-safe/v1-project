@@ -6,10 +6,10 @@ import "../contracts/Liquisafe.sol";
 import "../contracts/PriceOracle.sol";
 
 import "../contracts/interfaces/IUniswapV2Router02.sol";
-import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {ERC20} from "@openzeppelin2/contracts/token/ERC20/ERC20.sol";
 
-import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
-import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
+import {TransparentUpgradeableProxy} from "@openzeppelin2/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {ProxyAdmin} from "@openzeppelin2/contracts/proxy/transparent/ProxyAdmin.sol";
 
 contract Fixture is Test {
     ERC20 public constant wEth =

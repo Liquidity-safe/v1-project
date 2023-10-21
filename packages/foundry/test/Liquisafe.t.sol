@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 import {console} from "forge-std/console.sol";
 import "../contracts/Liquisafe.sol";
 import "../contracts/PriceOracle.sol";
-import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {ERC20} from "@openzeppelin2/contracts/token/ERC20/ERC20.sol";
 import {Fixture} from "./Fixture.t.sol";
 import "../contracts/interfaces/uni-v3/core/IUniswapV3Factory.sol";
 import "../contracts/interfaces/uni-v3/core/IUniswapV3Pool.sol";
