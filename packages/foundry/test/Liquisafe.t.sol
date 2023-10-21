@@ -82,16 +82,13 @@ contract LiquisafeTest is Fixture {
         uint256 liquidity = ERC20(pair).balanceOf(alice);
         console.log("Alice liquidity %s", liquidity);
 
-        vm.prank(alice);
-        liquisafe.addOrder(
-            Liquisafe.OrderType.UniV2,
+        vm.startPrank(alice);
+        liquisafe.addOrderV2(
             Liquisafe.OrderRole.Withdraw,
             alice,
             uniswapV2Factory,
             address(usdcToken),
             address(wEth),
-            0,
-            0,
             uint128(liquidity),
             uint128(95 * 10 ** (liquisafe.decimalsUsd() - 1)),
             uint128(1500 * 10 ** liquisafe.decimalsUsd())
@@ -108,15 +105,12 @@ contract LiquisafeTest is Fixture {
         console.log("Alice liquidity %s", liquidity);
 
         vm.startPrank(alice);
-        liquisafe.addOrder(
-            Liquisafe.OrderType.UniV2,
+        liquisafe.addOrderV2(
             Liquisafe.OrderRole.Withdraw,
             alice,
             uniswapV2Factory,
             address(usdcToken),
             address(wEth),
-            0,
-            0,
             uint128(liquidity),
             uint128(95 * 10 ** (liquisafe.decimalsUsd() - 1)),
             uint128(1500 * 10 ** liquisafe.decimalsUsd())
@@ -133,85 +127,67 @@ contract LiquisafeTest is Fixture {
 
         vm.startPrank(alice, alice);
 
-        liquisafe.addOrder(
-            Liquisafe.OrderType.UniV2,
+        liquisafe.addOrderV2(
             Liquisafe.OrderRole.Withdraw,
             alice,
             uniswapV2Factory,
             address(usdcToken),
             address(wEth),
-            0,
-            0,
             uint128(1000000000),
             0,
             uint128(150 * 10 ** liquisafe.decimalsUsd())
         );
 
-        liquisafe.addOrder(
-            Liquisafe.OrderType.UniV2,
+        liquisafe.addOrderV2(
             Liquisafe.OrderRole.Withdraw,
             alice,
             uniswapV2Factory,
             address(usdcToken),
             address(wEth),
-            0,
-            0,
             uint128(1000000000),
             0,
             uint128(5000 * 10 ** liquisafe.decimalsUsd())
         );
 
-        liquisafe.addOrder(
-            Liquisafe.OrderType.UniV2,
+        liquisafe.addOrderV2(
             Liquisafe.OrderRole.Withdraw,
             alice,
             uniswapV2Factory,
             address(usdcToken),
             address(wEth),
-            0,
-            0,
             uint128(1000000000),
             uint128(50 * 10 ** liquisafe.decimalsUsd()),
             uint128(5000 * 10 ** liquisafe.decimalsUsd())
         );
 
-        liquisafe.addOrder(
-            Liquisafe.OrderType.UniV2,
+        liquisafe.addOrderV2(
             Liquisafe.OrderRole.Withdraw,
             alice,
             uniswapV2Factory,
             address(usdcToken),
             address(wEth),
-            0,
-            0,
             uint128(1000000000),
             uint128((5 * 10 ** liquisafe.decimalsUsd()) / 10),
             uint128(500 * 10 ** liquisafe.decimalsUsd())
         );
 
-        liquisafe.addOrder(
-            Liquisafe.OrderType.UniV2,
+        liquisafe.addOrderV2(
             Liquisafe.OrderRole.Withdraw,
             alice,
             uniswapV2Factory,
             address(usdcToken),
             address(wEth),
-            0,
-            0,
             uint128(1000000000),
             uint128((5 * 10 ** liquisafe.decimalsUsd())),
             0
         );
 
-        liquisafe.addOrder(
-            Liquisafe.OrderType.UniV2,
+        liquisafe.addOrderV2(
             Liquisafe.OrderRole.Withdraw,
             alice,
             uniswapV2Factory,
             address(usdcToken),
             address(wEth),
-            0,
-            0,
             uint128(1000000000),
             uint128((5 * 10 ** liquisafe.decimalsUsd()) / 10),
             0
@@ -244,15 +220,12 @@ contract LiquisafeTest is Fixture {
         vm.startPrank(alice, alice);
         liquidityPair.approve(address(liquisafe), liquidity);
 
-        liquisafe.addOrder(
-            Liquisafe.OrderType.UniV2,
+        liquisafe.addOrderV2(
             Liquisafe.OrderRole.Withdraw,
             alice,
             uniswapV2Factory,
             address(usdcToken),
             address(wEth),
-            0,
-            0,
             uint128(liquidity),
             uint128((9 * 10 ** liquisafe.decimalsUsd()) / 10),
             uint128(1800 * 10 ** liquisafe.decimalsUsd())
@@ -320,14 +293,10 @@ contract LiquisafeTest is Fixture {
 
         nonfungiblePositionManager.approve(address(liquisafe), tokenId);
 
-        liquisafe.addOrder(
-            Liquisafe.OrderType.UniV3,
+        liquisafe.addOrderV3(
             Liquisafe.OrderRole.Withdraw,
             alice,
             uniswapV3Factory,
-            address(usdcToken),
-            address(wEth),
-            500,
             tokenId,
             uint128(liquidity),
             uint128((9 * 10 ** liquisafe.decimalsUsd()) / 10),

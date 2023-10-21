@@ -22,7 +22,7 @@ contract Fixture is Test {
         ERC20(0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599);
 
     ERC20 public constant linkToken =
-        ERC20(0x514910771af9ca656af840dff83e8264ecf986ca);
+        ERC20(0x514910771AF9Ca656af840dff83E8264EcF986CA);
 
     address public constant uniswapV2Factory =
         0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;

@@ -89,6 +89,8 @@ contract Liquisafe is Initializable, AccessControlUpgradeable, IERC721Receiver {
     error IncorrectReceiver();
     error IncorrectPositionId();
     error NotOwner();
+    error PositionManagerNotFound();
+    error PositionInsufficientLiquidity(uint128);
 
     function initialize(
         address _priceOracle,
@@ -146,15 +148,12 @@ contract Liquisafe is Initializable, AccessControlUpgradeable, IERC721Receiver {
 
     //  orders CRUD
 
-    function addOrder(
-        OrderType orderType,
+    function addOrderV2(
         OrderRole orderRole,
         address receiver,
         address factory,
         address token0,
         address token1,
-        uint24 fee,
-        uint256 positionId,
         uint128 amountLiquidity,
         uint128 minAmountToken0Usd,
         uint128 minAmountToken1Usd
@@ -174,22 +173,99 @@ contract Liquisafe is Initializable, AccessControlUpgradeable, IERC721Receiver {
             revert NotImplemented();
         }
 
-        address pool;
-        address positionManager;
-        if (orderType == OrderType.UniV2) {
-            if (amountLiquidity == 0) {
-                revert InsufficientLiquidity();
-            }
-            pool = IUniswapV2Factory(factory).getPair(token0, token1);
-        } else if (orderType == OrderType.UniV3) {
-            if (positionId == 0) {
-                revert IncorrectPositionId();
-            }
-            pool = IUniswapV3Factory(factory).getPool(token0, token1, fee);
-            positionManager = nonFungiblePositionManagers[factory];
-        } else if (orderType == OrderType.UniV4) {
+        if (amountLiquidity == 0) {
+            revert InsufficientLiquidity();
+        }
+
+        address pool = IUniswapV2Factory(factory).getPair(token0, token1);
+
+        if (pool == address(0)) {
+            revert PoolNotFound();
+        }
+
+        uint128 liquidity = uint128(IERC20(pool).balanceOf(msg.sender));
+
+        if (liquidity < amountLiquidity) {
+            revert PositionInsufficientLiquidity(liquidity);
+        }
+
+        // simply add order, user don't deposit liquidity in the contract
+        Order memory newOrder = Order(
+            OrderStatus.Active,
+            OrderType.UniV2,
+            orderRole,
+            msg.sender,
+            receiver,
+            pool,
+            address(0),
+            token0,
+            token1,
+            0,
+            amountLiquidity,
+            minAmountToken0Usd,
+            minAmountToken1Usd
+        );
+        allOrders.push(newOrder);
+
+        emit Add(msg.sender, receiver, allOrders.length - 1, newOrder);
+    }
+
+    function addOrderV3(
+        OrderRole orderRole,
+        address receiver,
+        address factory,
+        uint256 tokenId,
+        uint128 amountLiquidity,
+        uint128 minAmountToken0Usd,
+        uint128 minAmountToken1Usd
+    ) external {
+        if (!authorizedFactories[factory]) {
+            revert UnauthorizedFactory();
+        }
+        if (receiver == address(0)) {
+            revert IncorrectReceiver();
+        }
+
+        if (orderRole != OrderRole.Withdraw) {
             revert NotImplemented();
         }
+
+        if (amountLiquidity == 0) {
+            revert InsufficientLiquidity();
+        }
+
+        address positionManager = nonFungiblePositionManagers[factory];
+
+        if (positionManager == address(0)) {
+            revert PositionManagerNotFound();
+        }
+        address owner = INonfungiblePositionManager(positionManager).ownerOf(
+            tokenId
+        );
+        if (owner != msg.sender) {
+            revert NotOwner();
+        }
+
+        (
+            ,
+            ,
+            address token0,
+            address token1,
+            uint24 fee,
+            ,
+            ,
+            uint128 liquidity,
+            ,
+            ,
+            ,
+
+        ) = INonfungiblePositionManager(positionManager).positions(tokenId);
+
+        if (liquidity < amountLiquidity) {
+            revert PositionInsufficientLiquidity(liquidity);
+        }
+
+        address pool = IUniswapV3Factory(factory).getPool(token0, token1, fee);
 
         if (pool == address(0)) {
             revert PoolNotFound();
@@ -198,7 +274,7 @@ contract Liquisafe is Initializable, AccessControlUpgradeable, IERC721Receiver {
         // simply add order, user don't deposit liquidity in the contract
         Order memory newOrder = Order(
             OrderStatus.Active,
-            orderType,
+            OrderType.UniV3,
             orderRole,
             msg.sender,
             receiver,
@@ -206,7 +282,7 @@ contract Liquisafe is Initializable, AccessControlUpgradeable, IERC721Receiver {
             positionManager,
             token0,
             token1,
-            positionId,
+            tokenId,
             amountLiquidity,
             minAmountToken0Usd,
             minAmountToken1Usd
