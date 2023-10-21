@@ -54,7 +54,7 @@ export const LiqudityV2 = ({ dex, tokenA, tokenB }) => {
     const factory = IUniswapV2Factory__factory.connect(dex, signer);
     const pair = await factory.getPair(tokenA, tokenB);
     const erc20 = IERC20__factory.connect(pair, signer);
-    var tx = await erc20.approve(deployedContractData!.address, liquidity);
+    const tx = await erc20.approve(deployedContractData!.address, liquidity);
     await tx.wait();
     const allowance = await erc20.allowance(user, deployedContractData!.address);
     console.log("allowance", allowance);

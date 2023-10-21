@@ -5,6 +5,7 @@ import { ethers } from "ethers";
 import toast from "react-hot-toast";
 import Modal from "react-modal";
 import { useNetwork } from "wagmi";
+import { InformationCircleIcon } from "@heroicons/react/24/outline";
 import { useDeployedContractInfo } from "~~/hooks/scaffold-eth";
 import { useEthersSigner } from "~~/services/ethers";
 import { Liquisafe__factory, PriceOracle__factory } from "~~/types/typechain";
@@ -22,13 +23,15 @@ export const CreateOrder = ({}) => {
   const [amountA, setAmountA] = useState(0);
   const [amountB, setAmountB] = useState(0);
   const [amountLiquidity, setAmountLiquidity] = useState(0);
-  const [fee, setFee] = useState(500);
-  const [swap, setSwap] = useState(["Uniswap V2", "Uniswap V3"]);
+  const [user, setUser] = useState("");
+
   const { chain } = useNetwork();
   const signer = useEthersSigner();
   const { data: deployedContractData, isLoading: deployedContractLoading } = useDeployedContractInfo("Liquisafe");
   const { data: oracleContractData, isLoading: oracleContractLoading } = useDeployedContractInfo("PriceOracle");
   const [open, setOpen] = useState(false);
+
+  const [pool, setpool] = useState();
 
   useEffect(() => {
     setChainId(chain?.id || 1);
@@ -37,6 +40,9 @@ export const CreateOrder = ({}) => {
       //getAllowance().then;
 
       console.log("chain id", chain.id);
+    }
+    if (signer) {
+      signer.getAddress().then(r => setUser(r));
     }
   }, [chain, signer]);
 
@@ -98,13 +104,61 @@ export const CreateOrder = ({}) => {
     },
   };
 
+  const create = async () => {
+    const [token0, token1] = adrTokenA < adrTokenB ? [adrTokenA, adrTokenB] : [adrTokenB, adrTokenA];
+    const [amount0, amount1] = adrTokenA < adrTokenB ? [amountA, amountB] : [amountB, amountA];
+
+    if (platform === "v2") {
+      const liquisafeFactory = Liquisafe__factory.connect(deployedContractData!.address, signer);
+
+      try {
+        const tx = await liquisafeFactory.addOrderV2(
+          1,
+          user,
+          "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f",
+          token0,
+          token1,
+          amountLiquidity,
+          amountA,
+          amountB,
+        );
+        await tx.wait();
+        setOpen(false);
+      } catch (err) {
+        const parsed = parseCustomError(err, liquisafeFactory);
+        console.log("create error", parsed);
+      }
+    } else {
+    }
+  };
+
+  function parseCustomError(error: any, contract: any) {
+    if (error?.revert) {
+      return error.revert;
+    }
+    const data = error.data;
+    if (typeof data !== "string" || !data.startsWith("0x")) {
+      return null;
+    }
+    const selector = data.substring(0, 10);
+    const fragment = contract.interface.fragments.find((fragment: any) => fragment.selector === selector);
+    if (!fragment) {
+      return null;
+    }
+    return {
+      name: fragment.name,
+      signature: fragment.format(),
+      args: contract.interface.decodeErrorResult(fragment, data),
+    };
+  }
+
   return (
     <div>
       <button className="btn" onClick={() => setOpen(true)}>
         Add order
       </button>
-      <Modal style={customStyles} isOpen={open}>
-        <div className="trade-info">
+      <Modal style={customStyles} isOpen={open} ariaHideApp={false}>
+        <div className="trade-info" style={{ width: "400px" }}>
           <span className="block text-2xl mb-3">Create Order</span>
           <div className="trade-content">
             <div className="token-info">
@@ -134,6 +188,7 @@ export const CreateOrder = ({}) => {
             </div>
             <div className="token-info">
               <span>Liquidity amount</span>
+              <InformationCircleIcon className="ml-1 h-4 w-4" title="Liquidity amount to withdraw" />
               <input
                 className="s-input"
                 type="number"
@@ -143,26 +198,32 @@ export const CreateOrder = ({}) => {
             </div>
             <div className="token-info">
               <span>Trigger A $</span>
+              <InformationCircleIcon
+                className="ml-1 h-4 w-4"
+                title="Price to trigger liquidity withdraw (0 to ignore this token)"
+              />
               <input
                 className="s-input"
                 type="number"
                 defaultValue={amountA}
                 onChange={e => setAmountA(e.target.value)}
               ></input>
-              <span>0 for no trigger</span>
             </div>
             <div className="token-info">
               <span>Trigger B $</span>
+              <InformationCircleIcon
+                className="ml-1 h-4 w-4"
+                title="Price to trigger liquidity withdraw (0 to ignore this token)"
+              />
               <input
                 className="s-input"
                 type="number"
                 defaultValue={amountB}
                 onChange={e => setAmountB(e.target.value)}
               ></input>
-              <span>0 for no trigger</span>
             </div>
           </div>
-          {platform === "v3" && (
+          {platform === "v2" && (
             <div>
               <LiqudityV2
                 dex="0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f"
@@ -172,6 +233,9 @@ export const CreateOrder = ({}) => {
             </div>
           )}
           <div style={{ textAlign: "center" }}>
+            <button className="s-button bg-base-300 mr-3" onClick={create}>
+              Create
+            </button>
             <button className="s-button" onClick={() => setOpen(false)}>
               Close
             </button>

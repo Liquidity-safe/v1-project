@@ -150,7 +150,7 @@ export const ListOrder = ({}) => {
             <td>{getType(el.orderType)}</td>
             <td>{formatNumber(parseInt(el.minAmountToken0Usd))}</td>
             <td>{formatNumber(parseInt(el.minAmountToken1Usd))}</td>
-            <td>{formatNumber(parseInt(el.amountLiquidity))}</td>
+            <td>{el.amountLiquidity.toString()}</td>
             <td>{el.pool}</td>
             <td>{isMine(el.owner) ? "✓" : "-"}</td>
             <td>
