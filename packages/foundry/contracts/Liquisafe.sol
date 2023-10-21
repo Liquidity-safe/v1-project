@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.21;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+// rename @openzeppelin2 to match remapping and not infere with univ4 remapping
+import "@openzeppelin2/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin2/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "./interfaces/IPriceOracle.sol";
 import "./interfaces/IERC20.sol";
 import "./interfaces/IWETH.sol";
@@ -11,7 +12,7 @@ import "./interfaces/IUniswapV2Factory.sol";
 
 import "./interfaces/uni-v3/core/IUniswapV3Factory.sol";
 import "./interfaces/uni-v3/core/IUniswapV3Pool.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import "@openzeppelin2/contracts/token/ERC721/IERC721Receiver.sol";
 import "./interfaces/uni-v3/periphery/INonfungiblePositionManager.sol";
 
 //import {console} from "forge-std/console.sol";

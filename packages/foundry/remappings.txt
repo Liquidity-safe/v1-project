@@ -1,6 +1,6 @@
 ds-test/=lib/forge-std/lib/ds-test/src/
 forge-std/=lib/forge-std/src/
 solidity-bytes-utils/=lib/solidity-bytes-utils/contracts/
-@openzeppelin=node_modules/@openzeppelin
+@openzeppelin2=node_modules/@openzeppelin
 @chainlink=node_modules/@chainlink
 @uniswap=node_modules/@uniswap
