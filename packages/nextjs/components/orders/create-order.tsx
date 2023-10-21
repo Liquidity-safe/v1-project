@@ -98,73 +98,71 @@ export const CreateOrder = ({}) => {
       <button className="btn" onClick={() => setOpen(true)}>
         Add order
       </button>
-      <Modal style={customStyles} isOpen={open} contentLabel="Create order">
-        <div className="bg-base-100">
-          <div className="trade-info">
-            <span className="block text-2xl">Create Order</span>
-            <div className="trade-content">
+      <Modal style={customStyles} isOpen={open}>
+        <div className="trade-info">
+          <span className="block text-2xl mb-3">Create Order</span>
+          <div className="trade-content">
+            <div className="token-info">
+              <span>Platform</span>
+              <select className="s-select" value={platform} onChange={e => setPlatform(e.target.value)}>
+                <option value={"v2"}>Uniswap v2</option>
+                <option value={"v3"}>Uniswap v3</option>
+              </select>
+            </div>
+            <div className="token-info">
+              <span> Token A</span>
+              <select className="s-select" value={tokenA} onChange={e => setTokenA(e.target.value)}>
+                <option value={"WETH"}>WETH</option>
+                <option value={"USDC"}>USDC</option>
+                <option value={"WBTC"}>WBTC</option>
+              </select>
+              <span>{priceA}$</span>
+            </div>
+            <div className="token-info">
+              <span> Token B</span>
+              <select className="s-select" value={tokenB} onChange={e => setTokenB(e.target.value)}>
+                <option value={"WETH"}>WETH</option>
+                <option value={"USDC"}>USDC</option>
+                <option value={"WBTC"}>WBTC</option>
+              </select>
+              <span>{priceB}$</span>
+            </div>
+            {/* {platform === "v3" && (
               <div className="token-info">
-                <span>Platform</span>
-                <select className="s-select" value={platform} onChange={e => setPlatform(e.target.value)}>
-                  <option value={"v2"}>Uniswap v2</option>
-                  <option value={"v3"}>Uniswap v3</option>
-                </select>
-              </div>
-              <div className="token-info">
-                <span> Token A</span>
-                <select className="s-select" value={tokenA} onChange={e => setTokenA(e.target.value)}>
-                  <option value={"WETH"}>WETH</option>
-                  <option value={"USDC"}>USDC</option>
-                  <option value={"WBTC"}>WBTC</option>
-                </select>
-                <span>{priceA}$</span>
-              </div>
-              <div className="token-info">
-                <span> Token B</span>
-                <select className="s-select" value={tokenB} onChange={e => setTokenB(e.target.value)}>
-                  <option value={"WETH"}>WETH</option>
-                  <option value={"USDC"}>USDC</option>
-                  <option value={"WBTC"}>WBTC</option>
-                </select>
-                <span>{priceB}$</span>
-              </div>
-              {platform === "v3" && (
-                <div className="token-info">
-                  <span>Pool fee %</span>
-                  <input
-                    className="s-input"
-                    type="number"
-                    defaultValue={poolFee}
-                    onChange={e => setPoolFee(e.target.value)}
-                  ></input>
-                </div>
-              )}
-              <div className="token-info">
-                <span>Trigger A $</span>
+                <span>Pool fee %</span>
                 <input
                   className="s-input"
                   type="number"
-                  defaultValue={amountA}
-                  onChange={e => setAmountA(e.target.value)}
+                  defaultValue={poolFee}
+                  onChange={e => setPoolFee(e.target.value)}
                 ></input>
-                <span>0 for no trigger</span>
               </div>
-              <div className="token-info">
-                <span>Trigger B $</span>
-                <input
-                  className="s-input"
-                  type="number"
-                  defaultValue={amountB}
-                  onChange={e => setAmountB(e.target.value)}
-                ></input>
-                <span>0 for no trigger</span>
-              </div>
+            )} */}
+            <div className="token-info">
+              <span>Trigger A $</span>
+              <input
+                className="s-input"
+                type="number"
+                defaultValue={amountA}
+                onChange={e => setAmountA(e.target.value)}
+              ></input>
+              <span>0 for no trigger</span>
             </div>
-            <div style={{ textAlign: "center" }}>
-              <button className="s-button" onClick={() => setOpen(false)}>
-                Close
-              </button>
+            <div className="token-info">
+              <span>Trigger B $</span>
+              <input
+                className="s-input"
+                type="number"
+                defaultValue={amountB}
+                onChange={e => setAmountB(e.target.value)}
+              ></input>
+              <span>0 for no trigger</span>
             </div>
+          </div>
+          <div style={{ textAlign: "center" }}>
+            <button className="s-button" onClick={() => setOpen(false)}>
+              Close
+            </button>
           </div>
         </div>
       </Modal>

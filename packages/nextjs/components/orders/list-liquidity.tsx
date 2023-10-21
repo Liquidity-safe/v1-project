@@ -9,8 +9,8 @@ import { Liquisafe__factory } from "~~/types/typechain";
 import { Liquisafe } from "~~/types/typechain/Liquisafe";
 import { formatNumber } from "~~/utils/format-number";
 
-export const ListOrder = ({}) => {
-  const [orderList, setOrderList] = useState<Liquisafe.OrderStructOutput[]>([]);
+export const ListLiqudity = ({ dex, tokenA, tokenB, fee }) => {
+  const [liquidities, setLiquidities] = useState<any[]>([]);
   const [chainId, setChainId] = useState(1);
   const [user, setUser] = useState("");
   const { chain } = useNetwork();
@@ -130,9 +130,9 @@ export const ListOrder = ({}) => {
 
   return (
     <div className="order-list">
-      <div className="token-info">
-        <span className="text-2xl mr-10">All orders</span> <CreateOrder></CreateOrder>
-      </div>
+      <CreateOrder></CreateOrder>
+
+      <div>All orders</div>
       <table>
         <tr>
           <th>Status</th>
