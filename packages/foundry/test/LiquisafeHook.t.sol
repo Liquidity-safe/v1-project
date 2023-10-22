@@ -19,6 +19,8 @@ import "../contracts/interfaces/uni-v3/periphery/INonfungiblePositionManager.sol
 import "../contracts/interfaces/uni-v3/core/IUniswapV3Factory.sol";
 import "../contracts/interfaces/uni-v3/core/IUniswapV3Pool.sol";
 
+import {PoolModifyPositionTest} from "@uniswap/v4-core/contracts/test/PoolModifyPositionTest.sol";
+
 import {console} from "forge-std/console.sol";
 
 contract TestLiquisafeHook is Test, Deployers, TokenFixture {
@@ -39,6 +41,8 @@ contract TestLiquisafeHook is Test, Deployers, TokenFixture {
 
     TestERC20 token0;
     TestERC20 token1;
+
+    PoolModifyPositionTest modifyPositionRouter;
 
     uint24 poolFee = 500;
 
@@ -93,6 +97,10 @@ contract TestLiquisafeHook is Test, Deployers, TokenFixture {
 
         swapRouter = new PoolSwapTest(manager);
 
+        modifyPositionRouter = new PoolModifyPositionTest(
+            IPoolManager(address(manager))
+        );
+
         address pool = uniswapV3Factory.createPool(
             address(token0),
             address(token1),
@@ -112,13 +120,101 @@ contract TestLiquisafeHook is Test, Deployers, TokenFixture {
     }
 
     function test_AddLiquidity() public {
-        // uniswapV3Factory.createPool(token0,token1)
-        uint256 tokenId = _mintPosition(15 ether, 1 ether, alice);
+        uint256 tokenId = _mintPositionV3(15 ether, 1 ether, alice);
 
         assertGt(tokenId, 0);
+        _addPositionV4();
     }
 
-    function _mintPosition(
+    function test_Execute() public {
+        // create liquidities
+        uint256 tokenId = _mintPositionV3(15 ether, 1 ether, alice);
+
+        assertGt(tokenId, 0);
+        _addPositionV4();
+
+        uint256 aliceBal = token0.balanceOf(alice);
+        uint256 aliceBal1 = token1.balanceOf(alice);
+        assertEq(aliceBal, 0);
+        assertEq(aliceBal1, 0);
+
+        bool zeroForOne = true;
+
+        vm.startPrank(alice);
+        // add order
+        uniswapV3PositionManager.setApprovalForAll(
+            address(liquisafeHook),
+            true
+        );
+        int24 tick = 100;
+        int24 tickLower = liquisafeHook.placeLiquidity(
+            key,
+            tick,
+            zeroForOne,
+            tokenId
+        );
+
+        vm.stopPrank();
+        assertEq(tickLower, 60);
+
+        IPoolManager.SwapParams memory params = IPoolManager.SwapParams({
+            zeroForOne: !zeroForOne,
+            amountSpecified: 1 ether,
+            sqrtPriceLimitX96: TickMath.MAX_SQRT_RATIO - 1
+        });
+
+        PoolSwapTest.TestSettings memory testSettings = PoolSwapTest
+            .TestSettings({withdrawTokens: true, settleUsingTransfer: true});
+
+        swapRouter.swap(key, params, testSettings, "");
+        aliceBal = token0.balanceOf(alice);
+        aliceBal1 = token1.balanceOf(alice);
+        // alice get the token from the liquidity
+        assertGt(aliceBal, 0);
+        assertGt(aliceBal1, 0);
+    }
+
+    function _addPositionV4() private {
+        // Approve the modifyPositionRouter to spend your tokens
+        token0.approve(address(modifyPositionRouter), 100 ether);
+        token1.approve(address(modifyPositionRouter), 100 ether);
+
+        // Add liquidity across different tick ranges
+        // First, from -60 to +60
+        // Then, from -120 to +120
+        // Then, from minimum possible tick to maximum possible tick
+
+        // Add liquidity from -60 to +60
+        modifyPositionRouter.modifyPosition(
+            key,
+            IPoolManager.ModifyPositionParams(-60, 60, 10 ether),
+            ""
+        );
+
+        // Add liquidity from -120 to +120
+        modifyPositionRouter.modifyPosition(
+            key,
+            IPoolManager.ModifyPositionParams(-120, 120, 10 ether),
+            ""
+        );
+
+        // Add liquidity from minimum tick to maximum tick
+        modifyPositionRouter.modifyPosition(
+            key,
+            IPoolManager.ModifyPositionParams(
+                TickMath.minUsableTick(60),
+                TickMath.maxUsableTick(60),
+                50 ether
+            ),
+            ""
+        );
+
+        // Approve the tokens for swapping through the swapRouter
+        token0.approve(address(swapRouter), 100 ether);
+        token1.approve(address(swapRouter), 100 ether);
+    }
+
+    function _mintPositionV3(
         uint256 amount0ToMint,
         uint256 amount1ToMint,
         address recipient
