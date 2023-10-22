@@ -7,12 +7,16 @@
     "compile": "forge compile",
     "deploy": "forge build --build-info --build-info-path out/build-info/ && forge script script/DeployLiquisafe.s.sol --rpc-url ${1:-default_network} --broadcast --legacy && node script/generateTsAbis.js",
     "deploy:goerli": "forge build --build-info --build-info-path out/build-info/ && forge script script/DeployLiquisafe.s.sol --rpc-url ${1:-goerli} --broadcast --legacy && node script/generateTsAbis.js",
+    "deploy:pozk": "forge build --build-info --build-info-path out/build-info/ && forge script script/DeployLiquisafe.s.sol --rpc-url ${1:-polygonZktest} --broadcast --legacy && node script/generateTsAbis.js",
+    "deploy:scroll": "forge build --build-info --build-info-path out/build-info/ && forge script script/DeployLiquisafe.s.sol --rpc-url ${1:-scrollSepolia} --broadcast --legacy && node script/generateTsAbis.js",
+    "deploy:mantle": "forge build --build-info --build-info-path out/build-info/ && forge script script/DeployLiquisafe.s.sol --rpc-url ${1:-mantleTestnet} --broadcast --legacy && node script/generateTsAbis.js",
     "deploy:verify": "forge build --build-info --build-info-path out/build-info/ && forge script script/DeployLiquisafe.s.sol --rpc-url ${1:-default_network} --broadcast --legacy --verify ; node script/generateTsAbis.js",
     "fork": "anvil --fork-url ${0:-mainnet} --chain-id 31337 --config-out localhost.json ",
     "generate": "node script/generateAccount.js",
     "lint": "forge fmt",
     "test": "forge test",
     "verify": "forge build --build-info --build-info-path out/build-info/ && forge script script/VerifyAll.s.sol --ffi --rpc-url ${1:-default_network}",
+    "verify:goerli": "forge build --build-info --build-info-path out/build-info/ && forge script script/VerifyAll.s.sol --ffi --rpc-url ${1:-goerli}",
     "typechain": "typechain --target ethers-v6 --out-dir out/typechain 'out/*.sol/*.json'"
   },
   "dependencies": {

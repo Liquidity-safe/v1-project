@@ -58,7 +58,23 @@ contract DeployLiquisafeScript is ScaffoldETHDeploy {
         );
 
         if (block.chainid == 5) {
+            // goerli
             wEth = ERC20(0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6);
+        }
+
+        if (block.chainid == 1442) {
+            //polygon zkevm test
+            wEth = ERC20(0x30ec47F7DFae72eA79646e6cf64a8A7db538915b);
+        }
+
+        if (block.chainid == 5001) {
+            //mantle test
+            wEth = ERC20(0x8734110e5e1dcF439c7F549db740E546fea82d66);
+        }
+
+        if (block.chainid == 534351) {
+            // scroll  sepolia
+            wEth = ERC20(0x5300000000000000000000000000000000000004);
         }
 
         liquisafe = Liquisafe(
@@ -78,6 +94,21 @@ contract DeployLiquisafeScript is ScaffoldETHDeploy {
 
         if (block.chainid == 5) {
             _deployGoerli();
+        }
+
+        if (block.chainid == 1442) {
+            //polygon zkevm test
+            _deployPolygon();
+        }
+
+        if (block.chainid == 5001) {
+            //mantle test
+            _deployMantle();
+        }
+
+        if (block.chainid == 534351) {
+            // scroll  sepolia
+            _deployScroll();
         }
 
         console.logString(
@@ -264,6 +295,71 @@ contract DeployLiquisafeScript is ScaffoldETHDeploy {
         priceOracle.addPriceFeed(
             address(linkToken),
             0x48731cF7e84dc94C5f84577882c14Be11a5B7456
+        );
+    }
+
+    function _deployPolygon() private {
+        // add factory pancakeswap v2
+        liquisafe.setFactory(
+            address(0xBA40c83026213F9cbc79998752721a0312bdB74a),
+            true
+        );
+        // v3
+        liquisafe.setFactory(
+            address(0x2430dbd123BC40f8Be6110065a448C1aA0619Cb1),
+            true
+        );
+        liquisafe.setNonfungiblePositionManager(
+            address(0x2430dbd123BC40f8Be6110065a448C1aA0619Cb1),
+            address(0x1f489dd5B559E976AE74303F939Cfd0aF1b62C2B)
+        );
+
+        usdcToken = ERC20(0x7379a261bC347BDD445484A91648Abf4A2BDEe5E);
+    }
+
+    function _deployMantle() private {
+        // add factory fusionx v2
+        liquisafe.setFactory(
+            address(0x272465431A6b86E3B9E5b9bD33f5D103a3F59eDb),
+            true
+        );
+        // v3
+        liquisafe.setFactory(
+            address(0xf811BF0B2174135Ff1c8E615eB6B678caECa8d61),
+            true
+        );
+        liquisafe.setNonfungiblePositionManager(
+            address(0xf811BF0B2174135Ff1c8E615eB6B678caECa8d61),
+            address(0x94705da51466F3Bb1E8c1591D71C09c9760f5F59)
+        );
+
+        usdcToken = ERC20(0xc92747b1e4Bd5F89BBB66bAE657268a5F4c4850C);
+    }
+
+    function _deployScroll() private {
+        // add factory pixelswap v2
+        liquisafe.setFactory(
+            address(0xE4f7776c753aF46D2aa23e3348d17548C86DC47D),
+            true
+        );
+
+        usdcToken = ERC20(0x690000EF01deCE82d837B5fAa2719AE47b156697);
+        linkToken = ERC20(0x7273ebbB21F8D8AcF2bC12E71a08937712E9E40c);
+
+        // add price oracle
+        priceOracle.addPriceFeed(
+            address(wEth),
+            0x59F1ec1f10bD7eD9B938431086bC1D9e233ECf41
+        );
+
+        priceOracle.addPriceFeed(
+            address(usdcToken),
+            0xFadA8b0737D4A3AE7118918B7E69E689034c0127
+        );
+
+        priceOracle.addPriceFeed(
+            address(linkToken),
+            0xaC3E04999aEfE44D508cB3f9B972b0Ecd07c1efb
         );
     }
 

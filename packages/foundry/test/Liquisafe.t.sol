@@ -73,6 +73,20 @@ contract LiquisafeTest is Fixture {
         return (MAX_TICK / tickSpacing) * tickSpacing;
     }
 
+    function test_EncodeSelector() public {
+        bytes memory data = abi.encodeWithSelector(
+            Liquisafe.initialize.selector,
+            address(0x9a1bFf80A98480FD2A82603a474cf65B53Bce82a),
+            address(0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6)
+        );
+
+        console.log(
+            '"constructor(address,address,bytes)" 0xe167cf94f3fe6cd37a817a37ee8f2fe0ed4057d0 0xE3051507DB7881fA2B3B1Fd6923211f52aFf646b '
+        );
+
+        console.logBytes(data);
+    }
+
     function test_AddOrder() public {
         // get liquidity amount
         address pair = IUniswapV2Factory(uniswapV2Factory).getPair(

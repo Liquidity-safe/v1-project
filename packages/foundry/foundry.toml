@@ -23,6 +23,9 @@ gnosis = "https://rpc.gnosischain.com"
 chiado = "https://rpc.chiadochain.net"
 base = "https://mainnet.base.org"
 baseGoerli = "https://goerli.base.org"
+mantleTestnet = "https://rpc.testnet.mantle.xyz/"
+scrollSepolia = "https://rpc.ankr.com/scroll_sepolia_testnet"
+polygonZktest = "https://rpc.public.zkevm-test.net"
 
 [etherscan]
 polygonMumbai = { key = "${ETHERSCAN_API_KEY}" }
