@@ -50,6 +50,7 @@ export const ListOrder = ({}) => {
   const getOrders = async () => {
     try {
       if (!deployedContractLoading && deployedContractData && signer) {
+        console.log("contract", deployedContractData);
         const LiquisafeFactory = Liquisafe__factory.connect(deployedContractData.address, signer);
         const datas = await LiquisafeFactory.fetchPageOrders(0, 1000);
         setOrderList(datas[0]);
@@ -134,34 +135,38 @@ export const ListOrder = ({}) => {
         <span className="text-2xl mr-10">All orders</span> <CreateOrder></CreateOrder>
       </div>
       <table>
-        <tr>
-          <th>Status</th>
-          <th>Type</th>
-          <th>Min price Token 0</th>
-          <th>Min price Token 1</th>
-          <th>Liquidity amount</th>
-          <th>Pool</th>
-          <th>Mine</th>
-          <th>Action</th>
-        </tr>
-        {orderList.map((el, index) => (
-          <tr className="buy" key={index}>
-            <td>{getStatus(el.orderStatus)}</td>
-            <td>{getType(el.orderType)}</td>
-            <td>{formatNumber(parseInt(el.minAmountToken0Usd))}</td>
-            <td>{formatNumber(parseInt(el.minAmountToken1Usd))}</td>
-            <td>{el.amountLiquidity.toString()}</td>
-            <td>{el.pool}</td>
-            <td>{isMine(el.owner) ? "✓" : "-"}</td>
-            <td>
-              {isMine(el.owner) && el.orderStatus.toString() === "1" && (
-                <button className="s-button" onClick={() => cancelOrder(el)}>
-                  Cancel
-                </button>
-              )}
-            </td>
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th>Type</th>
+            <th>Min price Token 0</th>
+            <th>Min price Token 1</th>
+            <th>Liquidity amount</th>
+            <th>Pool</th>
+            <th>Mine</th>
+            <th>Action</th>
           </tr>
-        ))}
+        </thead>
+        <tbody>
+          {orderList.map((el, index) => (
+            <tr className="buy" key={index}>
+              <td>{getStatus(el.orderStatus)}</td>
+              <td>{getType(el.orderType)}</td>
+              <td>{formatNumber(parseInt(el.minAmountToken0Usd))}</td>
+              <td>{formatNumber(parseInt(el.minAmountToken1Usd))}</td>
+              <td>{el.amountLiquidity.toString()}</td>
+              <td>{el.pool}</td>
+              <td>{isMine(el.owner) ? "✓" : "-"}</td>
+              <td>
+                {isMine(el.owner) && el.orderStatus.toString() === "1" && (
+                  // <button className="s-button" onClick={() => cancelOrder(el)}>
+                  //   Cancel
+                  // </button>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
       </table>
     </div>
   );

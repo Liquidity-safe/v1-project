@@ -131,7 +131,7 @@ const contracts = {
           ],
         },
         PriceOracle: {
-          address: "0xA921352173fE5bF4cd1CBcfb1AA280932865560f",
+          address: "0x9a1bFf80A98480FD2A82603a474cf65B53Bce82a",
           abi: [
             {
               inputs: [],
@@ -641,7 +641,7 @@ const contracts = {
           ],
         },
         Liquisafe: {
-          address: "0xe167CF94F3fE6cd37A817a37eE8F2FE0ed4057d0",
+          address: "0xC0c73537B0a76aEE7E2B557Ed3D56Ab8DbD0FceA",
           abi: [
             {
               inputs: [],
@@ -5249,7 +5249,7 @@ const contracts = {
           ],
         },
         PriceOracle: {
-          address: "0x43b9Ef43D415e84aD9964567002d648b11747A8f",
+          address: "0x9a1bFf80A98480FD2A82603a474cf65B53Bce82a",
           abi: [
             {
               inputs: [],
@@ -5759,7 +5759,7 @@ const contracts = {
           ],
         },
         Liquisafe: {
-          address: "0x32cd5ecdA7f2B8633C00A0434DE28Db111E60636",
+          address: "0xC0c73537B0a76aEE7E2B557Ed3D56Ab8DbD0FceA",
           abi: [
             {
               inputs: [],
