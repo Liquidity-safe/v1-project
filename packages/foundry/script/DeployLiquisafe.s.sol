@@ -15,28 +15,24 @@ import {ProxyAdmin} from "@openzeppelin2/contracts/proxy/transparent/ProxyAdmin.
 contract DeployLiquisafeScript is ScaffoldETHDeploy {
     error InvalidPrivateKey(string);
 
-    ERC20 public constant wEth =
-        ERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
+    ERC20 public wEth = ERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
 
-    ERC20 public constant usdcToken =
-        ERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
+    ERC20 public usdcToken = ERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
 
-    ERC20 public constant btcToken =
-        ERC20(0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599);
+    ERC20 public btcToken = ERC20(0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599);
 
-    ERC20 public constant linkToken =
-        ERC20(0x514910771AF9Ca656af840dff83E8264EcF986CA);
+    ERC20 public linkToken = ERC20(0x514910771AF9Ca656af840dff83E8264EcF986CA);
 
-    address public constant uniswapV2Factory =
+    address public uniswapV2Factory =
         0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
 
-    address public constant uniswapV3Factory =
+    address public uniswapV3Factory =
         0x1F98431c8aD98523631AE4a59f267346ea31F984;
 
-    address public constant uniswapV3PositionManager =
+    address public uniswapV3PositionManager =
         0xC36442b4a4522E871399CD717aBDD847Ab11FE88;
 
-    IUniswapV2Router02 public constant uniswapV2Router =
+    IUniswapV2Router02 public uniswapV2Router =
         IUniswapV2Router02(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
 
     ProxyAdmin public proxyAdmin;
@@ -61,6 +57,10 @@ contract DeployLiquisafeScript is ScaffoldETHDeploy {
             )
         );
 
+        if (block.chainid == 5) {
+            wEth = ERC20(0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6);
+        }
+
         liquisafe = Liquisafe(
             _deployProxy(
                 address(new Liquisafe()),
@@ -74,6 +74,10 @@ contract DeployLiquisafeScript is ScaffoldETHDeploy {
 
         if (block.chainid == 31337) {
             _deployTest();
+        }
+
+        if (block.chainid == 5) {
+            _deployGoerli();
         }
 
         console.logString(
@@ -174,8 +178,6 @@ contract DeployLiquisafeScript is ScaffoldETHDeploy {
 
         uint256 balance = usdcToken.balanceOf(receiver);
 
-        console.log("balance user %s amout %s", receiver, balance);
-
         uniswapV2Router.addLiquidityETH{value: 10 ether}(
             address(usdcToken),
             10_000 * 10 ** usdcToken.decimals(),
@@ -226,6 +228,42 @@ contract DeployLiquisafeScript is ScaffoldETHDeploy {
             90 ether,
             90 ether,
             3000
+        );
+    }
+
+    function _deployGoerli() private {
+        // add factory
+        liquisafe.setFactory(address(uniswapV2Factory), true);
+        liquisafe.setFactory(address(uniswapV3Factory), true);
+        liquisafe.setNonfungiblePositionManager(
+            address(uniswapV3Factory),
+            address(uniswapV3PositionManager)
+        );
+
+        wEth = ERC20(0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6);
+        usdcToken = ERC20(0x07865c6E87B9F70255377e024ace6630C1Eaa37F);
+        btcToken = ERC20(0xC04B0d3107736C32e19F1c62b2aF67BE61d63a05);
+        linkToken = ERC20(0x326C977E6efc84E512bB9C30f76E30c160eD06FB);
+
+        // add price oracle
+        priceOracle.addPriceFeed(
+            address(wEth),
+            0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e
+        );
+
+        priceOracle.addPriceFeed(
+            address(btcToken),
+            0xA39434A63A52E749F02807ae27335515BA4b07F7
+        );
+
+        priceOracle.addPriceFeed(
+            address(usdcToken),
+            0xAb5c49580294Aff77670F839ea425f5b78ab3Ae7
+        );
+
+        priceOracle.addPriceFeed(
+            address(linkToken),
+            0x48731cF7e84dc94C5f84577882c14Be11a5B7456
         );
     }
 
