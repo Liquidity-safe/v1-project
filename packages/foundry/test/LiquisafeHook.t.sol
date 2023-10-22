@@ -17,9 +17,17 @@ import {TickMath} from "@uniswap/v4-core/contracts/libraries/TickMath.sol";
 import {PoolKey} from "@uniswap/v4-core/contracts/types/PoolKey.sol";
 import "../contracts/interfaces/uni-v3/periphery/INonfungiblePositionManager.sol";
 import "../contracts/interfaces/uni-v3/core/IUniswapV3Factory.sol";
+import "../contracts/interfaces/uni-v3/core/IUniswapV3Pool.sol";
+
+import {console} from "forge-std/console.sol";
 
 contract TestLiquisafeHook is Test, Deployers, TokenFixture {
     using PoolIdLibrary for PoolKey;
+
+    /// @dev The minimum tick that may be passed to #getSqrtRatioAtTick computed from log base 1.0001 of 2**-128
+    int24 internal constant MIN_TICK = -887272;
+    /// @dev The maximum tick that may be passed to #getSqrtRatioAtTick computed from log base 1.0001 of 2**128
+    int24 internal constant MAX_TICK = -MIN_TICK;
 
     uint160 constant SQRT_RATIO_10_1 = 250541448375047931186413801569;
 
@@ -85,7 +93,12 @@ contract TestLiquisafeHook is Test, Deployers, TokenFixture {
 
         swapRouter = new PoolSwapTest(manager);
 
-        uniswapV3Factory.createPool(address(token0), address(token1), poolFee);
+        address pool = uniswapV3Factory.createPool(
+            address(token0),
+            address(token1),
+            poolFee
+        );
+        IUniswapV3Pool(pool).initialize(SQRT_RATIO_1_1);
 
         token0.approve(address(liquisafeHook), type(uint256).max);
         token1.approve(address(liquisafeHook), type(uint256).max);
@@ -93,11 +106,16 @@ contract TestLiquisafeHook is Test, Deployers, TokenFixture {
         token1.approve(address(swapRouter), type(uint256).max);
         token0.approve(address(uniswapV3PositionManager), type(uint256).max);
         token1.approve(address(uniswapV3PositionManager), type(uint256).max);
+
+        token0.mint(address(this), 10000 ether);
+        token1.mint(address(this), 10000 ether);
     }
 
-    function TestAddLiquidity() public {
+    function test_AddLiquidity() public {
         // uniswapV3Factory.createPool(token0,token1)
-        _mintPosition(1500 * 10 ** 6, 10 ** 6, alice);
+        uint256 tokenId = _mintPosition(15 ether, 1 ether, alice);
+
+        assertGt(tokenId, 0);
     }
 
     function _mintPosition(
@@ -105,24 +123,40 @@ contract TestLiquisafeHook is Test, Deployers, TokenFixture {
         uint256 amount1ToMint,
         address recipient
     ) private returns (uint256) {
+        address pool = uniswapV3Factory.getPool(
+            address(token0),
+            address(token1),
+            poolFee
+        );
+
+        int24 tick = IUniswapV3Pool(pool).tickSpacing();
+
         INonfungiblePositionManager.MintParams
             memory params = INonfungiblePositionManager.MintParams({
                 token0: address(token0),
                 token1: address(token1),
                 fee: poolFee,
-                tickLower: TickMath.MIN_TICK,
-                tickUpper: TickMath.MAX_TICK,
+                tickLower: getMinTick(tick),
+                tickUpper: getMaxTick(tick),
                 amount0Desired: amount0ToMint,
                 amount1Desired: amount1ToMint,
                 amount0Min: 0,
                 amount1Min: 0,
                 recipient: recipient,
-                deadline: block.timestamp
+                deadline: block.timestamp + 100
             });
 
         // Note that the pool defined by DAI/USDC and fee tier 0.3% must already be created and initialized in order to mint
         (uint256 tokenId, , , ) = uniswapV3PositionManager.mint(params);
 
         return tokenId;
+    }
+
+    function getMinTick(int24 tickSpacing) internal pure returns (int24) {
+        return (MIN_TICK / tickSpacing) * tickSpacing;
+    }
+
+    function getMaxTick(int24 tickSpacing) internal pure returns (int24) {
+        return (MAX_TICK / tickSpacing) * tickSpacing;
     }
 }
