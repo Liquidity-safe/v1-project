@@ -61,10 +61,6 @@ contract DeployLiquisafeScript is ScaffoldETHDeploy {
             )
         );
 
-        if (block.chainid == 31337) {
-            _deployTest();
-        }
-
         liquisafe = Liquisafe(
             _deployProxy(
                 address(new Liquisafe()),
@@ -75,6 +71,10 @@ contract DeployLiquisafeScript is ScaffoldETHDeploy {
                 )
             )
         );
+
+        if (block.chainid == 31337) {
+            _deployTest();
+        }
 
         console.logString(
             string.concat(
@@ -114,6 +114,14 @@ contract DeployLiquisafeScript is ScaffoldETHDeploy {
     }
 
     function _deployTest() private {
+        // add factory
+        liquisafe.setFactory(address(uniswapV2Factory), true);
+        liquisafe.setFactory(address(uniswapV3Factory), true);
+        liquisafe.setNonfungiblePositionManager(
+            address(uniswapV3Factory),
+            address(uniswapV3PositionManager)
+        );
+
         // add price oracle
         priceOracle.addPriceFeed(
             address(wEth),

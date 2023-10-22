@@ -531,7 +531,7 @@ const contracts = {
           ],
         },
         TransparentUpgradeableProxy: {
-          address: "0xC0340c0831Aa40A0791cF8C3Ab4287EB0a9705d8",
+          address: "0xbeC6419cD931e29ef41157fe24C6928a0C952f0b",
           abi: [
             {
               inputs: [
@@ -641,7 +641,7 @@ const contracts = {
           ],
         },
         Liquisafe: {
-          address: "0xC0340c0831Aa40A0791cF8C3Ab4287EB0a9705d8",
+          address: "0xbeC6419cD931e29ef41157fe24C6928a0C952f0b",
           abi: [
             {
               inputs: [],
