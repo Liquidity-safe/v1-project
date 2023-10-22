@@ -1,0 +1,56 @@
+type Add @entity(immutable: true) {
+  id: Bytes!
+  sender: Bytes! # address
+  receiver: Bytes! # address
+  orderIndex: BigInt! # uint256
+  order_orderStatus: Int! # uint8
+  order_orderType: Int! # uint8
+  order_orderRole: Int! # uint8
+  order_owner: Bytes! # address
+  order_receiver: Bytes! # address
+  order_pool: Bytes! # address
+  order_positionManager: Bytes! # address
+  order_token0: Bytes! # address
+  order_token1: Bytes! # address
+  order_positionId: BigInt! # uint256
+  order_amountLiquidity: BigInt! # uint128
+  order_minAmountToken0Usd: BigInt! # uint128
+  order_minAmountToken1Usd: BigInt! # uint128
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type Executed @entity(immutable: true) {
+  id: Bytes!
+  sender: Bytes! # address
+  orderIndex: BigInt! # uint256
+  order_orderStatus: Int! # uint8
+  order_orderType: Int! # uint8
+  order_orderRole: Int! # uint8
+  order_owner: Bytes! # address
+  order_receiver: Bytes! # address
+  order_pool: Bytes! # address
+  order_positionManager: Bytes! # address
+  order_token0: Bytes! # address
+  order_token1: Bytes! # address
+  order_positionId: BigInt! # uint256
+  order_amountLiquidity: BigInt! # uint128
+  order_minAmountToken0Usd: BigInt! # uint128
+  order_minAmountToken1Usd: BigInt! # uint128
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type EpnsNotificationCounter @entity {
+  id: ID!
+  totalCount: BigInt!
+}
+
+type EpnsPushNotification @entity {
+  id: ID!
+  notificationNumber: BigInt!
+  recipient: String!
+  notification: String!
+}

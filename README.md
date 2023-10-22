@@ -34,6 +34,10 @@ Liquisafe 0xC0c73537B0a76aEE7E2B557Ed3D56Ab8DbD0FceA
 
 PriceOracle 0x9a1bFf80A98480FD2A82603a474cf65B53Bce82a
 
+## The graph
+subgraph address :
+
+https://thegraph.com/hosted-service/subgraph/youtpout/liquisafe
 
 ## Verify exemple
 
