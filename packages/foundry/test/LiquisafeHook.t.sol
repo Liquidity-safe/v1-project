@@ -174,6 +174,58 @@ contract TestLiquisafeHook is Test, Deployers, TokenFixture {
         assertGt(aliceBal1, 0);
     }
 
+    function test_Cancel() public {
+        // create liquidities
+        uint256 tokenId = _mintPositionV3(15 ether, 1 ether, alice);
+
+        assertGt(tokenId, 0);
+        _addPositionV4();
+
+        uint256 aliceBal = token0.balanceOf(alice);
+        uint256 aliceBal1 = token1.balanceOf(alice);
+        assertEq(aliceBal, 0);
+        assertEq(aliceBal1, 0);
+
+        bool zeroForOne = true;
+
+        vm.startPrank(alice);
+        // add order
+        uniswapV3PositionManager.setApprovalForAll(
+            address(liquisafeHook),
+            true
+        );
+        int24 tick = 100;
+        int24 tickLower = liquisafeHook.placeLiquidity(
+            key,
+            tick,
+            zeroForOne,
+            tokenId
+        );
+
+        // remove order
+        liquisafeHook.cancelLiquidity(key, tickLower, zeroForOne, tokenId);
+
+        vm.stopPrank();
+        assertEq(tickLower, 60);
+
+        IPoolManager.SwapParams memory params = IPoolManager.SwapParams({
+            zeroForOne: !zeroForOne,
+            amountSpecified: 1 ether,
+            sqrtPriceLimitX96: TickMath.MAX_SQRT_RATIO - 1
+        });
+
+        PoolSwapTest.TestSettings memory testSettings = PoolSwapTest
+            .TestSettings({withdrawTokens: true, settleUsingTransfer: true});
+
+        swapRouter.swap(key, params, testSettings, "");
+        aliceBal = token0.balanceOf(alice);
+        aliceBal1 = token1.balanceOf(alice);
+
+        // alice get 0 token because the position is not trigger anymore by the hook
+        assertEq(aliceBal, 0);
+        assertEq(aliceBal1, 0);
+    }
+
     function _addPositionV4() private {
         // Approve the modifyPositionRouter to spend your tokens
         token0.approve(address(modifyPositionRouter), 100 ether);
