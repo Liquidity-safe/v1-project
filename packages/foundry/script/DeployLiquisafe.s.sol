@@ -318,6 +318,7 @@ contract DeployLiquisafeScript is ScaffoldETHDeploy {
     }
 
     function _deployMantle() private {
+        // tweet link https://twitter.com/infernal_tower/status/1716199704696897843
         // add factory fusionx v2
         liquisafe.setFactory(
             address(0x272465431A6b86E3B9E5b9bD33f5D103a3F59eDb),
