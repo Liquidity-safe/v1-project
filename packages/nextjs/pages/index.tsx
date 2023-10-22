@@ -9,6 +9,15 @@ const Home: NextPage = () => {
     <>
       <MetaHeader />
 
+      <div>
+        <div className="text-l m-3">
+          This websibe use push protocol, add push in your wallet
+          <a className="ml-3" style={{ color: "beige" }} href="https://snaps.metamask.io/snap/npm/pushprotocol/snap/">
+            https://snaps.metamask.io/snap/npm/pushprotocol/snap/
+          </a>
+        </div>
+      </div>
+
       <ListOrder></ListOrder>
     </>
   );
