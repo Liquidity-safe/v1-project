@@ -158,11 +158,11 @@ export const ListOrder = ({}) => {
               <td>{el.pool}</td>
               <td>{isMine(el.owner) ? "✓" : "-"}</td>
               <td>
-                {isMine(el.owner) && el.orderStatus.toString() === "1" && (
-                  // <button className="s-button" onClick={() => cancelOrder(el)}>
-                  //   Cancel
-                  // </button>
-                )}
+                {/* {isMine(el.owner) && el.orderStatus.toString() === "1" && (
+                  <button className="s-button" onClick={() => cancelOrder(el)}>
+                    Cancel
+                  </button>
+                )} */}
               </td>
             </tr>
           ))}
